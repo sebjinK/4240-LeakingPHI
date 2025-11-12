@@ -77,7 +77,7 @@ To create an accessible and motivating AI tool that promotes **healthy living th
 
 ---
 
----
+
 
 **AI Health Habit Tracker – Group 4**  
 *Empowering better habits, one conversation at a time.*
