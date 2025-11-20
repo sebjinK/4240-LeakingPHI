@@ -1,0 +1,18 @@
+</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Generic difficulty slider label updater (used in baseline + future forms)
+  document.addEventListener('DOMContentLoaded', () => {
+    const slider = document.querySelector('[data-difficulty-slider]');
+    const label = document.querySelector('[data-difficulty-label]');
+    if (slider && label) {
+      const update = () => { label.textContent = slider.value; };
+      slider.addEventListener('input', update);
+      update();
+    }
+  });
+</script>
+</body>
+</html>
