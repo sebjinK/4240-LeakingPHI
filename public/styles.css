@@ -1,0 +1,17 @@
+body {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    min-height: 100vh;
+  }
+  
+  main .container {
+    max-width: 960px;
+  }
+  
+  .soft-card {
+    border-radius: 1rem;
+    background-color: #f8fafc;
+  }
+  
+  .navbar-brand {
+    letter-spacing: 0.03em;
+  }

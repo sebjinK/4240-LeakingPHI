@@ -1,0 +1,82 @@
+<%- include('partials/header', { user: user }) %>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card shadow soft-card mb-3">
+      <div class="card-body">
+        <h2 class="mb-3">Welcome back, <%= user.name %> 👋</h2>
+
+        <% if (!baseline) { %>
+          <p>You haven't set your baseline goals yet.</p>
+          <a href="/baseline" class="btn btn-primary">Set Baseline Goals</a>
+        <% } else { %>
+          <h5>Baseline Goals</h5>
+          <ul>
+            <li>Sleep: <strong><%= baseline.goalSleep %> hours</strong></li>
+            <li>Water: <strong><%= baseline.goalWater %> cups/day</strong></li>
+            <li>Exercise: <strong><%= baseline.goalExerciseMinutes %> minutes/day</strong></li>
+            <li>Target Mood: <strong><%= baseline.goalMood %>/10</strong></li>
+            <li>Preferred Difficulty: <strong><%= baseline.difficultyPreference %>/10</strong></li>
+          </ul>
+          <a href="/baseline" class="btn btn-outline-secondary btn-sm">Edit Baseline</a>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="card shadow soft-card">
+      <div class="card-body">
+        <h5 class="mb-3">Recent Entries</h5>
+
+        <% if (!entries.length) { %>
+          <p class="text-muted">No entries yet. Start by logging today!</p>
+        <% } else { %>
+          <div class="table-responsive">
+            <table class="table table-striped align-middle">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Sleep (h)</th>
+                  <th>Water (cups)</th>
+                  <th>Exercise (min)</th>
+                  <th>Mood</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% entries.forEach(e => { %>
+                  <tr>
+                    <td><%= e.date %></td>
+                    <td><%= e.sleepHours ?? '-' %></td>
+                    <td><%= e.waterCups ?? '-' %></td>
+                    <td><%= e.exerciseMinutes ?? '-' %></td>
+                    <td><%= e.mood ?? '-' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+
+        <a href="/entries/new" class="btn btn-primary">Log Today’s Habits</a>
+        <a href="/entries" class="btn btn-outline-secondary ms-2">Manage Entries</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card shadow soft-card">
+      <div class="card-body">
+        <h5 class="mb-2">Next Step: AI Suggestions</h5>
+        <p class="text-muted">
+          Soon, you’ll be able to send your baseline and recent data to an AI model.
+          It will generate personalized suggestions with a difficulty rating (1–10),
+          and you’ll be able to tell it if you want things easier or harder.
+        </p>
+        <button class="btn btn-outline-primary w-100" disabled>
+          AI Suggestions Coming Soon
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>
