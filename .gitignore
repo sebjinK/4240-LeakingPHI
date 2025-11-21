@@ -17,7 +17,7 @@ pnpm-debug.log*
 .env
 .env.local
 .env.*.local
-config.js
+
 
 # temporary files
 tmp/
