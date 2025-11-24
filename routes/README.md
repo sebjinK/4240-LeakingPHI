@@ -2,7 +2,7 @@
 ---
 
 # 📁 **routes/README.md**
-```md
+
 # Routes Directory
 
 This folder holds all Express route modules.  
@@ -62,3 +62,4 @@ Currently uses stub logic in `aiController`.
 - All routes are mounted in `server.js` with:
 ```js
 app.use('/', someRoutes);
+
