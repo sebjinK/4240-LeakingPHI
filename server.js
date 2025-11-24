@@ -11,6 +11,7 @@ const baselineRoutes = require('./routes/baselineRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const entryRoutes = require('./routes/entryRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const promptEngineerRoutes = require('./routes/promptEngineerRoutes');
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use('/', baselineRoutes);
 app.use('/', dashboardRoutes);
 app.use('/', entryRoutes);
 app.use('/', aiRoutes);
+app.use('/', promptEngineerRoutes);
 
 // ====== SERVER ======
 const PORT = process.env.PORT || 3000;
