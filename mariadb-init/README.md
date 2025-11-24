@@ -1,8 +1,8 @@
 
 ---
 
-# 📁 **mariadb-init/README.md**
-```md
+# **mariadb-init/README.md**
+
 # MariaDB Initialization Directory
 
 This folder holds SQL files that automatically initialize the MariaDB schema when the container is first created.
