@@ -1,8 +1,8 @@
 
 ---
 
-# 📁 **views/README.md**
-```md
+# **views/README.md**
+
 # Views Directory (EJS Templates)
 
 This folder contains all UI templates rendered by Express.
