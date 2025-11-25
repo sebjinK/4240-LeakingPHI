@@ -1,11 +1,11 @@
 # We're Leaking Private Healthcare Information with this one!!!!
 
 
-# AI Health Habit Tracker
+# Fitness Buddy
 *A Conversational Assistant for Personal Wellness Monitoring*
 
 ## Project Overview
-The **AI Health Habit Tracker** is a text-based AI wellness assistant designed to help users build and maintain healthy daily routines. It provides a simple, conversational way to log sleep, exercise, meals, hydration, and mood — without requiring complex wearables or manual app navigation.
+The **Fitness Buddy** is a text-based AI wellness assistant designed to help users build and maintain healthy daily routines. It provides a simple, conversational way to log sleep, exercise, meals, hydration, and mood — without requiring complex wearables or manual app navigation.
 
 By leveraging natural language input, users can type sentences like  
 > “I slept 7 hours and went to the gym for 45 minutes”  
@@ -79,5 +79,5 @@ To create an accessible and motivating AI tool that promotes **healthy living th
 
 
 
-**AI Health Habit Tracker – Group 4**  
+**Fitness Buddy – Group 4**  
 *Empowering better habits, one conversation at a time.*
