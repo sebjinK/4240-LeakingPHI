@@ -1,18 +1,30 @@
 // controllers/aiController.js
 // controller functions for AI suggestions
-let users = global.users || [];
-let entries = global.entries || [];
+const pool = require('../config');
 
-module.exports.aiSuggestion = (req, res) => {
-  const user = users.find(u => u.id === req.session.userId);
+module.exports.aiSuggestion = async (req, res) => {
+  try {
+    const conn = await pool.getConnection();
 
-  const payload = {
-    baseline: user.baseline,
-    latestEntry: entries
-      .filter(e => e.userId === user.id)
-      .sort((a,b) => new Date(b.date) - new Date(a.date))[0] || null,
-    desiredDifficulty: user.baseline?.difficultyPreference || 5
-  };
+    const [baselineRows, entriesRows] = await Promise.all([
+      conn.query('SELECT * FROM baseline WHERE user_id = ?', [req.session.userId]),
+      conn.query('SELECT * FROM entries WHERE user_id = ? ORDER BY date DESC LIMIT 1', [req.session.userId])
+    ]);
 
-  res.json({ message: "LLM integration coming soon!", payload });
+    conn.release();
+
+    const baseline = baselineRows[0] || null;
+    const latestEntry = entriesRows[0] || null;
+
+    const payload = {
+      baseline,
+      latestEntry,
+      desiredDifficulty: baseline?.difficulty_preference || 5
+    };
+
+    res.json({ message: "LLM integration coming soon!", payload });
+  } catch (err) {
+    console.error('aiSuggestion error:', err);
+    res.status(500).json({ message: "Error generating AI suggestion." });
+  }
 };
