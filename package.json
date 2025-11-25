@@ -15,6 +15,7 @@
     "express": "^4.19.2",
     "express-session": "^1.17.3",
     "express-validator": "^7.0.1",
-    "mariadb": "^3.2.0"
+    "mariadb": "^3.2.0",
+    "transformers": "^3.1.0"
   }
 }
