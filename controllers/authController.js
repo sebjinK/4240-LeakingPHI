@@ -5,14 +5,14 @@ const pool = require('../config');
 const bcrypt = require('bcrypt');
 
 // ====== RENDER PAGES ======
-exports.showLogin = (req, res) => {
+function showLogin(req, res) {
   res.render('login', {
     errors: [],
     old: {}
   });
 };
 
-exports.showRegister = (req, res) => {
+function showRegister(req, res) {
   res.render('register', {
     errors: [],
     old: {}
@@ -20,7 +20,7 @@ exports.showRegister = (req, res) => {
 };
 
 // ====== REGISTER USER ======
-exports.registerUser = async (req, res) => {
+async function registerUser(req, res) {
   const { name, email, password, confirmPassword } = req.body;
 
   const normalizedEmail = (email || '').trim().toLowerCase();
@@ -82,7 +82,7 @@ exports.registerUser = async (req, res) => {
     req.session.save(() => {
       res.redirect('/baseline');
     });
-    
+
   } catch (err) {
     console.error('registerUser error:', err);
     res.status(500).send('Registration failed');
@@ -90,7 +90,7 @@ exports.registerUser = async (req, res) => {
 };
 
 // ====== LOGIN USER ======
-exports.loginUser = async (req, res) => {
+async function loginUser(req, res) {
   const { email, password } = req.body;
   const normalizedEmail = (email || '').trim().toLowerCase();
 
@@ -137,8 +137,18 @@ exports.loginUser = async (req, res) => {
 };
 
 // ====== LOGOUT ======
-exports.logoutUser = (req, res) => {
+function logoutUser(req, res) {
   req.session.destroy(() => {
     res.redirect('/login');
   });
+};
+
+
+// ====== EXPORT ALL ======
+module.exports = {
+  showLogin,
+  showRegister,
+  registerUser,
+  loginUser,
+  logoutUser
 };
