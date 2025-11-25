@@ -36,8 +36,6 @@ app.use('/', generalRoutes);
 app.use('/', authRoutes);
 app.use('/', baselineRoutes);
 app.use('/', dashboardRoutes);
-app.use('/', entryRoutes);
-app.use('/', aiRoutes);
 app.use('/', promptEngineerRoutes);
 
 // ====== SERVER ======

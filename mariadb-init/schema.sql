@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS suggestions (
     user_id INT NOT NULL UNIQUE,
     suggestion VARCHAR (4500),
     rating VARCHAR (10),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
 );
 
