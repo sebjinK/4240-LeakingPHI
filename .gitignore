@@ -73,3 +73,6 @@ desktop.ini
 *.pem
 *.crt
 *.key
+
+
+models/*
