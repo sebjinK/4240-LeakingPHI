@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS baseline (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    UNIQUE user_id INT NOT NULL,
+     user_id INT NOT NULL UNIQUE,
     age_years INT,
     gender VARCHAR (36),
     height VARCHAR (36),
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS baseline (
 
 CREATE TABLE IF NOT EXISTS preferences (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    UNIQUE user_id INT NOT NULL,
+    user_id INT NOT NULL UNIQUE ,
     intensity INT,
     exercise_enjoyment VARCHAR (255),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS preferences (
 
 CREATE TABLE IF NOT EXISTS goals (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    UNIQUE user_id INT NOT NULL,
+    user_id INT NOT NULL UNIQUE,
     primary_goal VARCHAR (255),
     short_goal VARCHAR (255),
     long_goal VARCHAR (255),
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS goals (
 
 CREATE TABLE IF NOT EXISTS suggestions (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    UNIQUE user_id INT NOT NULL,
+    user_id INT NOT NULL UNIQUE,
     suggestion VARCHAR (4500),
     rating VARCHAR (10),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
