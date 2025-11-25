@@ -1,7 +1,8 @@
 // controllers/aiController.js
 require("dotenv").config();
 const { InferenceClient } = require("@huggingface/inference");
-// const db = require("../db"); // ← if you want DB storage later
+
+const db = require("../db"); // ← if you want DB storage later
 
 const client = new InferenceClient(process.env.HF_TOKEN);
 const MODEL_ID =
@@ -83,7 +84,6 @@ Do not add anything outside these tags.
 `.trim();
 }
 
-// DAILY USER PROMPT — today’s check-in answers
 // DAILY USER PROMPT — today's check-in + last suggestion (from suggestions table)
 function buildDailyUserPrompt(daily = {}, lastSuggestion = {}) {
   const {
@@ -156,36 +156,26 @@ function parseTag(text, tagName) {
   return match ? match[1].trim() : "";
 }
 
-async function systemPrompt(req, res) {
-  try {
-    const intake = req.body.intake || {};
-    const sysPrompt = buildBasisSystemPrompt(intake);
+async function getLastSuggestion(userId) {
+  const [rows] = await db.query(
+    "SELECT * FROM suggestions WHERE user_id = ? LIMIT 1",
+    [userId]
+  );
+  return rows[0] || null;
+}
 
-    let full = "";
-    const result = await client.chatCompletion({
-    model: MODEL_ID,
-    messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: "Create the baseline summary and plan" }
-    ]
-    });
+async function getUserIntake(userId) {
+  const [[baselineRows], [preferencesRows], [goalsRows]] = await Promise.all([
+    db.query("SELECT age_years, gender, height, user_weight, medical_condition, activity_level, dietary_prefrences FROM baseline WHERE user_id = ?", [userId]),
+    db.query("SELECT intensity, exercise_enjoyment FROM preferences WHERE user_id = ?", [userId]),
+    db.query("SELECT primary_goal, short_goal, long_goal, days_goal FROM goals WHERE user_id = ?", [userId]),
+  ]);
 
-    full = result.choices[0].message.content || "";
+  const baseline = baselineRows[0] || null;
+  const preferences = preferencesRows[0] || null;
+  const goals = goalsRows[0] || null;
 
-    const baselineSummary = parseTag(full, "BASELINE_SUMMARY") || full.trim();
-    const baselinePlan = parseTag(full, "BASELINE_PLAN");
-    const baselineFocus = parseTag(full, "BASELINE_FOCUS") || "general";
-
-    res.json({
-      ok: true,
-      baselineSummary,
-      baselinePlan,
-      baselineFocus,
-    });
-  } catch (err) {
-    console.error("BASIS ERROR:", err);
-    res.status(500).json({ ok: false, error: "Failed to generate basis output." });
-  }
+  return { baseline, preferences, goals };
 }
 
 async function dailyPrompt(req, res) {
@@ -194,7 +184,7 @@ async function dailyPrompt(req, res) {
     const daily = req.body.daily || {};
     const lastSuggestion = req.body.lastSuggestion || {};
 
-    const sysPrompt = buildBasisSystemPrompt(intake);
+    const systemPrompt = buildBasisSystemPrompt(intake);
     const userPrompt = buildDailyUserPrompt(daily, lastSuggestion);
 
     let full = "";
