@@ -11,62 +11,62 @@ const MODEL_ID =
 /*                          🔥 PROMPT BUILDERS HERE 🔥                         */
 /* -------------------------------------------------------------------------- */
 
-// SYSTEM PROMPT — created from intake answers
-function buildBasisSystemPrompt(intake = {}) {
+// SYSTEM PROMPT — built from baseline, preferences, and goals tables
+function buildBasisSystemPrompt(
+  baseline = {},
+  preferences = {},
+  goals = {}
+) {
   const {
-    age,
+    age_years,
     gender,
     height,
-    weight,
-    medicalConditions,
-    difficulty,
-    activityLevel,
-    exerciseType,
-    mealsPerDay,
-    dietPreferences,
-    primaryGoal,
-    shortTermGoals,
-    longTermGoals,
-    exerciseDaysPerWeek,
-    motivation,
-    selfHealthRating,
-    goalConfidence
-  } = intake;
+    user_weight,
+    medical_condition,
+    activity_level,
+    dietary_preferences,
+  } = baseline;
+
+  const {
+    intensity,              // maps to preferences.intensity
+    exercise_enjoyment,     // maps to preferences.exercise_enjoyment
+  } = preferences;
+
+  const {
+    primary_goal,
+    short_goal,
+    long_goal,
+    days_goal,
+  } = goals;
 
   return `
-You are the AI Health Habit Tracker, a friendly wellness assistant. Your response will be under 4000 characters and no more.
+You are the AI Health Habit Tracker, a friendly wellness assistant.
 
-USER PROFILE (from initial intake):
-- Age: ${age ?? "unknown"}
+USER PROFILE (from baseline):
+- Age (years): ${age_years ?? "unknown"}
 - Gender: ${gender ?? "unknown"}
 - Height: ${height ?? "unknown"}
-- Weight: ${weight ?? "unknown"}
-- Medical conditions: ${medicalConditions || "none given"}
+- Weight: ${user_weight ?? "unknown"}
+- Medical conditions: ${medical_condition || "none given"}
 
 LIFESTYLE & PREFERENCES:
-- Activity level: ${activityLevel ?? "unknown"}
-- Preferred exercise type: ${exerciseType ?? "unknown"}
-- Meals per day: ${mealsPerDay ?? "unknown"}
-- Dietary preferences: ${dietPreferences || "none"}
-- Desired difficulty of suggestions (1–10): ${difficulty ?? "not specified"}
+- Activity level: ${activity_level ?? "unknown"}
+- Dietary preferences: ${dietary_preferences || "none"}
+- Enjoyment / preferred exercise types: ${exercise_enjoyment || "not specified"}
+- Desired difficulty of suggestions (1–10): ${intensity ?? "not specified"}
 
 GOALS:
-- Primary goal: ${primaryGoal || "not specified"}
-- Short-term goals: ${shortTermGoals || "not specified"}
-- Long-term goals: ${longTermGoals || "not specified"}
-- Target exercise days per week: ${exerciseDaysPerWeek ?? "not specified"}
-- Motivation: ${motivation || "not specified"}
-
-SELF-ASSESSMENT:
-- Health rating (1–10): ${selfHealthRating ?? "not specified"}
-- Confidence in reaching goals (1–10): ${goalConfidence ?? "not specified"}
+- Primary goal: ${primary_goal || "not specified"}
+- Short-term goal(s): ${short_goal || "not specified"}
+- Long-term goal(s): ${long_goal || "not specified"}
+- Target exercise days per week: ${days_goal ?? "not specified"}
 
 YOUR ROLE:
 - Be supportive and non-judgmental.
 - When given a daily log, acknowledge what the user did today.
 - Mention progress toward their goals only when appropriate.
-- Provide 1–2 small, realistic, personalized suggestions.
-- Match the intensity of suggestions to the user's desired difficulty.
+- Provide 1–2 small, realistic, personalized suggestions that fit their goals and preferences.
+- Match the intensity of suggestions loosely to the "intensity" preference.
 - Do NOT offer medical diagnoses or emergency advice.
 
 OUTPUT FORMAT (MANDATORY):
@@ -84,8 +84,10 @@ Do not add anything outside these tags.
 }
 
 // DAILY USER PROMPT — today’s check-in answers
+// DAILY USER PROMPT — today's check-in + last suggestion (from suggestions table)
 function buildDailyUserPrompt(daily = {}, lastSuggestion = {}) {
   const {
+    // daily log values – you can map these from your `entries` table or request body
     sleepHours,
     waterCups,
     meals,
@@ -100,10 +102,14 @@ function buildDailyUserPrompt(daily = {}, lastSuggestion = {}) {
     workoutFeelingAfter,
     workedWell,
     challenges,
-    otherNotes
+    otherNotes,
   } = daily;
 
-  const { previousFeedback, previousFocus, previousFollowed } = lastSuggestion;
+  // From `suggestions` table: suggestion (TEXT), rating (VARCHAR(10))
+  const {
+    suggestion,  // text of previous suggestion
+    rating,      // how the user rated it (difficulty/effectiveness)
+  } = lastSuggestion;
 
   return `
 Here is my daily check-in:
@@ -130,14 +136,14 @@ Reflection:
 - Challenges: ${challenges || "not provided"}
 - Other notes: ${otherNotes || "none"}
 
-Previous suggestion:
-- Last focus: ${previousFocus || "none"}
-- Last suggestion text: ${previousFeedback || "none"}
-- Did I follow it? ${previousFollowed || "not provided"}
+Previous suggestion (from your system):
+- Last suggestion text: ${suggestion || "none"}
+- My rating of that suggestion (or difficulty/effectiveness): ${rating || "not provided"}
 
 Please generate feedback following the output format you were instructed to use.
 `.trim();
 }
+
 
 /* -------------------------------------------------------------------------- */
 /*                     🔥 REMAINDER OF YOUR CONTROLLERS 🔥                    */
@@ -156,21 +162,15 @@ async function systemPrompt(req, res) {
     const sysPrompt = buildBasisSystemPrompt(intake);
 
     let full = "";
-
-    const stream = client.chatCompletionStream({
-      model: MODEL_ID,
-      messages: [
-        { role: "system", content: sysPrompt },
-        {
-          role: "user",
-          content: "Create the baseline summary and plan in the required format.",
-        },
-      ],
+    const result = await client.chatCompletion({
+    model: MODEL_ID,
+    messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: "Create the baseline summary and plan" }
+    ]
     });
 
-    for await (const chunk of stream) {
-      full += chunk.choices?.[0]?.delta?.content ?? "";
-    }
+    full = result.choices[0].message.content || "";
 
     const baselineSummary = parseTag(full, "BASELINE_SUMMARY") || full.trim();
     const baselinePlan = parseTag(full, "BASELINE_PLAN");
@@ -199,17 +199,15 @@ async function dailyPrompt(req, res) {
 
     let full = "";
 
-    const stream = client.chatCompletionStream({
+    const result = await client.chatCompletion({
       model: MODEL_ID,
       messages: [
-        { role: "system", content: sysPrompt },
-        { role: "user", content: userPrompt },
-      ],
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ]
     });
 
-    for await (const chunk of stream) {
-      full += chunk.choices?.[0]?.delta?.content ?? "";
-    }
+    full = result.choices[0].message.content || "";
 
     const feedback = parseTag(full, "FEEDBACK") || full.trim();
     const focus = parseTag(full, "FOCUS") || "general";
@@ -217,7 +215,7 @@ async function dailyPrompt(req, res) {
     res.json({
       ok: true,
       feedback,
-      focus,
+      focus
     });
   } catch (err) {
     console.error("DAILY ERROR:", err);
