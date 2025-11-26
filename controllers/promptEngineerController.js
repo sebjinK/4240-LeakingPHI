@@ -2,11 +2,18 @@
 const pool = require('../config');
 require("dotenv").config();
 const { chatCompletion } = require('../helpers/hfChat');
-// const { InferenceClient } = require("@huggingface/inference");
+const { InferenceClient } = require("@huggingface/inference");
 
-// const client = new InferenceClient({ apiKey: hfToken });
+const client = new InferenceClient(process.env.HF_TOKEN);
+const MODEL_ID = process.env.HF_MODEL_ID || "Qwen/Qwen2.5-1.5B-Instruct:featherless-ai";
 
-// const MODEL_ID = process.env.HF_MODEL_ID || "Qwen/Qwen2.5-1.5B-Instruct:featherless-ai";
+
+const safeString = (value) => {
+  if (value === undefined || value === null) return "not provided";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+};
+
 
 /* -------------------------------------------------------------------------- */
 /*                          Local Prompt Builders                             */
@@ -14,7 +21,7 @@ const { chatCompletion } = require('../helpers/hfChat');
 
 // BUILD SYSTEM PROMPT — built from baseline, preferences, and goals tables
 function buildBasisSystemPrompt() {
-  return `
+  return safeString(`
 You are the Fitness Buddy, a friendly wellness assistant.
 
 YOUR ROLE:
@@ -38,7 +45,7 @@ You MUST respond using this exact structure to EVERY daily check-in:
 </FOCUS>
 
 Do not add anything outside these tags.
-`.trim();
+`.trim());
 }
 
 // DAILY USER PROMPT — today's check-in + last suggestion (from suggestions table)
@@ -91,49 +98,49 @@ function buildDailyUserPrompt(
     days_goal,
   } = goals;
 
-  return `
+  return safeString(`
 USER PROFILE (from baseline):
-- Age (years): ${age_years ?? "unknown"}
-- Gender: ${gender ?? "unknown"}
-- Height: ${height ?? "unknown"}
-- Weight: ${user_weight ?? "unknown"}
-- Medical conditions: ${medical_condition || "none given"}
+- Age (years): ${safeString(age_years)}
+- Gender: ${safeString(gender)}
+- Height: ${safeString(height)}
+- Weight: ${safeString(user_weight)}
+- Medical conditions: ${safeString(medical_condition)}
 
 LIFESTYLE & PREFERENCES:
-- Activity level: ${activity_level ?? "unknown"}
-- Dietary preferences: ${dietary_preferences || "none"}
-- Enjoyment / preferred exercise types: ${exercise_enjoyment || "not specified"}
-- Desired difficulty of suggestions (1–10): ${intensity ?? "not specified"}
+- Activity level: ${safeString(activity_level)}
+- Dietary preferences: ${safeString(dietary_preferences)}
+- Enjoyment / preferred exercise types: ${safeString(exercise_enjoyment)}
+- Desired difficulty of suggestions (1–10): ${safeString(intensity)}
 
 GOALS:
-- Primary goal: ${primary_goal || "not specified"}
-- Short-term goal(s): ${short_goal || "not specified"}
-- Long-term goal(s): ${long_goal || "not specified"}
-- Target exercise days per week: ${days_goal ?? "not specified"}
+- Primary goal: ${safeString(primary_goal)}
+- Short-term goal(s): ${safeString(short_goal)}
+- Long-term goal(s): ${safeString(long_goal)}
+- Target exercise days per week: ${safeString(days_goal)}
 
 Here is my daily check-in:
 
-- Sleep hours: ${sleepHours ?? "not provided"}
-- Hydration: ${hydration ?? "not provided"}
-- Meals: ${meals || "not provided"}
+- Sleep hours: ${safeString(sleepHours)}
+- Hydration: ${safeString(hydration)}
+- Meals: ${safeString(meals)}
 
 Exercise:
-- Exercise type: ${exerciseType || "none"}
-- Exercise duration: ${exerciseDuration ?? "not provided"}
-- Felt during workout: ${workoutFeelingDuring || "not provided"}
-- Felt after workout: ${workoutFeelingAfter || "not provided"}
+- Exercise type: ${safeString(exerciseType)}
+- Exercise duration: ${safeString(exerciseDuration)}
+- Felt during workout: ${safeString(workoutFeelingDuring)}
+- Felt after workout: ${safeString(workoutFeelingAfter)}
 
 Mood & Energy:
-- Energy level: ${energyLevel ?? "not provided"}
+- Energy level: ${safeString(energyLevel)}
 
 Reflection:
-- What worked well: ${workedWell || "not provided"}
-- Did I follow the most recent suggesion?: ${followed || "not provided"}
-- Other notes: ${otherNotes || "none"}
+- What worked well: ${safeString(workedWell)}
+- Did I follow the most recent suggesion?: ${safeString(followed)}
+- Other notes: ${safeString(otherNotes)}
 
 Previous suggestion (from your system):
-- Last suggestion text: ${suggestion || "none"}
-- My rating of that suggestion (or difficulty/effectiveness): ${rating || "not provided"}
+- Last suggestion text: ${safeString(suggestion)}
+- My rating of that suggestion (or difficulty/effectiveness): ${safeString(rating)}
 
 Please generate feedback following the output format you were instructed to use.
 
@@ -147,7 +154,7 @@ Please respond ONLY using the specified tags:
 
 Do not add anything outside these tags.
 
-`.trim();
+`.trim());
 }
 
 
@@ -197,14 +204,6 @@ async function dailyPrompt(req, res) {
 
     // Fetch user intake data
     const { baseline, goals, preferences } = await getUserIntake(userId);
-    // const intake = {
-    //   ...intakeData.baseline,
-    //   ...intakeData.preferences,
-    //   ...intakeData.goals
-    // };
-    // const baseline = intakeData.baseline;
-    // const preferences = intakeData.preferences;
-    // const goals = intakeData.goals;
     // fetch last suggestion from DB
     const suggestionRow = await getLastSuggestion(userId);
 
@@ -222,12 +221,41 @@ async function dailyPrompt(req, res) {
     const systemPrompt = buildBasisSystemPrompt();
     const userPrompt = buildDailyUserPrompt(daily, lastSuggestion, baseline, preferences, goals);
 
-    const full = await chatCompletion(
-      [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ]
-    );
+    // console.log(JSON.stringify({
+    //   model: 'Qwen/Qwen2.5-1.5B-Instruct',
+    //   messages: [
+    //     { role: 'system', content: systemPrompt },
+    //     { role: 'user', content: userPrompt }
+    //   ]
+    // }, null, 2));
+
+    //@REMOVE DEBUG
+    // const response = await client.chatCompletion({
+    //   "model": 'Qwen/Qwen2.5-1.5B-Instruct',
+    //   "messages": [
+    //     { "role": 'system', content: 'You are a helpful assistant.' },
+    //     { "role": 'user', content: 'Hello!' }
+    //   ]
+    // });
+    // console.log(response);
+
+    const response = await client.chatCompletion({
+
+      "messages": [
+        {
+          "role": "system",
+          "content": systemPrompt
+        },
+        {
+          "role": "user",
+          "content": userPrompt
+        },
+      ], "model": "gpt-3.5-turbo",
+    });
+
+    full = response.choices[0].message;
+
+
 
     const feedback = parseTag(full, "FEEDBACK") || full.trim();
     const focus = parseTag(full, "FOCUS") || "none specified"
