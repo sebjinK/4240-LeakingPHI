@@ -141,3 +141,83 @@ curl -X POST http://localhost:3001/debug/daily \
 ---
 
 **Summary:** Use `npm run dev` for local development and `docker-compose up` for containerized setup. Both automatically handle database connectivity.
+
+## Stopping and Tearing Down Containers
+
+When you're finished testing or want to free resources, use these commands to stop and remove containers, networks, and volumes.
+
+Stop containers (keep images and volumes):
+```bash
+docker-compose stop
+```
+
+Bring the compose stack down (remove containers and default network, keep volumes):
+```bash
+docker-compose down
+```
+
+Bring the compose stack down and remove named volumes (data will be lost):
+```bash
+docker-compose down --volumes
+```
+
+Bring the compose stack down and remove images built by compose (reclaim disk space):
+```bash
+docker-compose down --rmi local --volumes
+```
+
+Remove a single container (if needed):
+```bash
+docker rm -f <container_name_or_id>
+```
+
+See logs for debugging before teardown:
+```bash
+docker-compose logs --tail=200 app
+docker-compose logs --tail=200 qwen
+docker-compose logs --tail=200 mariadb
+```
+
+Restart a single service (rebuild if you've changed code):
+```bash
+docker-compose up -d --build app
+```
+
+Check running containers and ports:
+```bash
+docker-compose ps
+docker ps
+```
+
+Note: On Linux, `host.docker.internal` may not be available by default; if the app inside a container needs to call a service on the host, either use the host's IP address or run the Qwen server as a container (recommended).
+
+### Helper script: scripts/docker_manage.sh
+
+I've included a helper script at `scripts/docker_manage.sh` to make common docker-compose operations easier. Make it executable and use it instead of typing long docker-compose commands:
+
+```bash
+chmod +x scripts/docker_manage.sh
+
+# Stop containers:
+./scripts/docker_manage.sh stop
+
+# Tear down and remove volumes (destructive):
+FORCE=1 ./scripts/docker_manage.sh down-volumes
+
+# Tear down and remove local images + volumes (destructive):
+FORCE=1 ./scripts/docker_manage.sh down-images
+
+# Rebuild and start the full stack:
+./scripts/docker_manage.sh up
+
+# Rebuild only the app image and restart the app service:
+./scripts/docker_manage.sh rebuild-app && ./scripts/docker_manage.sh restart app
+
+# Show recent logs for a service:
+./scripts/docker_manage.sh logs app
+
+# Show compose status:
+./scripts/docker_manage.sh ps
+```
+
+The script includes a safety guard for destructive commands (`down-volumes`, `down-images`) — you must set `FORCE=1` to confirm removal of volumes/images.

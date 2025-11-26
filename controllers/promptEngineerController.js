@@ -99,62 +99,62 @@ function buildDailyUserPrompt(
   } = goals;
 
   return safeString(`
-USER PROFILE (from baseline):
-- Age (years): ${safeString(age_years)}
-- Gender: ${safeString(gender)}
-- Height: ${safeString(height)}
-- Weight: ${safeString(user_weight)}
-- Medical conditions: ${safeString(medical_condition)}
+      USER PROFILE (from baseline):
+      - Age (years): ${safeString(age_years)}
+      - Gender: ${safeString(gender)}
+      - Height: ${safeString(height)}
+      - Weight: ${safeString(user_weight)}
+      - Medical conditions: ${safeString(medical_condition)}
 
-LIFESTYLE & PREFERENCES:
-- Activity level: ${safeString(activity_level)}
-- Dietary preferences: ${safeString(dietary_preferences)}
-- Enjoyment / preferred exercise types: ${safeString(exercise_enjoyment)}
-- Desired difficulty of suggestions (1–10): ${safeString(intensity)}
+      LIFESTYLE & PREFERENCES:
+      - Activity level: ${safeString(activity_level)}
+      - Dietary preferences: ${safeString(dietary_preferences)}
+      - Enjoyment / preferred exercise types: ${safeString(exercise_enjoyment)}
+      - Desired difficulty of suggestions (1–10): ${safeString(intensity)}
 
-GOALS:
-- Primary goal: ${safeString(primary_goal)}
-- Short-term goal(s): ${safeString(short_goal)}
-- Long-term goal(s): ${safeString(long_goal)}
-- Target exercise days per week: ${safeString(days_goal)}
+      GOALS:
+      - Primary goal: ${safeString(primary_goal)}
+      - Short-term goal(s): ${safeString(short_goal)}
+      - Long-term goal(s): ${safeString(long_goal)}
+      - Target exercise days per week: ${safeString(days_goal)}
 
-Here is my daily check-in:
+      Here is my daily check-in:
 
-- Sleep hours: ${safeString(sleepHours)}
-- Hydration: ${safeString(hydration)}
-- Meals: ${safeString(meals)}
+      - Sleep hours: ${safeString(sleepHours)}
+      - Hydration: ${safeString(hydration)}
+      - Meals: ${safeString(meals)}
 
-Exercise:
-- Exercise type: ${safeString(exerciseType)}
-- Exercise duration: ${safeString(exerciseDuration)}
-- Felt during workout: ${safeString(workoutFeelingDuring)}
-- Felt after workout: ${safeString(workoutFeelingAfter)}
+      Exercise:
+      - Exercise type: ${safeString(exerciseType)}
+      - Exercise duration: ${safeString(exerciseDuration)}
+      - Felt during workout: ${safeString(workoutFeelingDuring)}
+      - Felt after workout: ${safeString(workoutFeelingAfter)}
 
-Mood & Energy:
-- Energy level: ${safeString(energyLevel)}
+      Mood & Energy:
+      - Energy level: ${safeString(energyLevel)}
 
-Reflection:
-- What worked well: ${safeString(workedWell)}
-- Did I follow the most recent suggesion?: ${safeString(followed)}
-- Other notes: ${safeString(otherNotes)}
+      Reflection:
+      - What worked well: ${safeString(workedWell)}
+      - Did I follow the most recent suggesion?: ${safeString(followed)}
+      - Other notes: ${safeString(otherNotes)}
 
-Previous suggestion (from your system):
-- Last suggestion text: ${safeString(suggestion)}
-- My rating of that suggestion (or difficulty/effectiveness): ${safeString(rating)}
+      Previous suggestion (from your system):
+      - Last suggestion text: ${safeString(suggestion)}
+      - My rating of that suggestion (or difficulty/effectiveness): ${safeString(rating)}
 
-Please generate feedback following the output format you were instructed to use.
+      Please generate feedback following the output format you were instructed to use.
 
-Please respond ONLY using the specified tags:
-<FEEDBACK>
-[Your supportive feedback here]
-</FEEDBACK>
-<FOCUS>
-[one word: sleep | hydration | exercise | mood | nutrition]
-</FOCUS>
+      Please respond ONLY using the specified tags:
+      <FEEDBACK>
+      [Your supportive feedback here]
+      </FEEDBACK>
+      <FOCUS>
+      [one word: sleep | hydration | exercise | mood | nutrition]
+      </FOCUS>
 
-Do not add anything outside these tags.
+      Do not add anything outside these tags.
 
-`.trim());
+      `.trim());
 }
 
 
@@ -263,9 +263,9 @@ async function dailyPrompt(req, res) {
     });
 
   } catch (err) {
-    console.error("[dailyPrompt] ERROR:", err.message || err);
-    if (err.stack) console.error("[dailyPrompt] Stack:", err.stack);
-    res.status(500).json({ ok: false, error: "Failed to generate daily output." });
+      console.error("[dailyPrompt] ERROR:", err.message || err);
+      if (err.stack) console.error("[dailyPrompt] Stack:", err.stack);
+      res.status(500).json({ ok: false, error: "Failed to generate daily output." });
   } finally {
     conn.release();
   }
