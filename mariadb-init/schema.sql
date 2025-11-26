@@ -44,6 +44,5 @@ CREATE TABLE IF NOT EXISTS suggestions (
     user_id INT NOT NULL UNIQUE,
     suggestion VARCHAR (4500),
     rating VARCHAR (10),
-    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-

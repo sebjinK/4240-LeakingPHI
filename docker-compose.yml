@@ -11,10 +11,10 @@ services:
     environment:
       DB_HOST: mariadb
       DB_PORT: 3306
-      DB_USER: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
-      DB_NAME: ${MYSQL_DATABASE}
-      SESSION_SECRET: ${SESSION_SECRET}
+      DB_USER: ${MYSQL_USER:-app_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-app_pass}
+      DB_NAME: ${MYSQL_DATABASE:-fitnessbuddy}
+      SESSION_SECRET: ${SESSION_SECRET:-change_this}
     depends_on:
       - mariadb
     networks:
@@ -25,10 +25,10 @@ services:
     container_name: health_mariadb
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_pass}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-fitnessbuddy}
+      MYSQL_USER: ${MYSQL_USER:-app_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-app_pass}
     ports:
       - "3307:3306"
     volumes:

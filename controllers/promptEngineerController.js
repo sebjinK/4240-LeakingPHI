@@ -216,9 +216,11 @@ async function dailyPrompt(req, res) {
 async function aiSuggestion(req, res) {
   res.json({
     ok: true,
-    message: "Not implemented yet — connect this to your DB.",
+    message: "Not implemented yet - connect this to your DB.",
   });
 }
+
+const systemPrompt = buildBasisSystemPrompt;
 
 module.exports = {
   systemPrompt,

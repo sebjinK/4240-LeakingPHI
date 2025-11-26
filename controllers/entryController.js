@@ -36,11 +36,23 @@ exports.listEntries = async (req, res) => {
 
     res.render('entries', {
       user,
-      entries
+      entries,
+      suggestions: ['Drink more water', 'Get more sleep']
     });
   } catch (err) {
     console.error('listEntries error:', err);
     res.status(500).send('Could not load entries');
+  }
+};
+
+// Simple placeholder check-in to keep routes from crashing
+exports.checkIn = async (req, res) => {
+  try {
+    // TODO: implement real check-in handling; for now just redirect back
+    res.redirect('/entries');
+  } catch (err) {
+    console.error('checkIn error:', err);
+    res.redirect('/entries');
   }
 };
 

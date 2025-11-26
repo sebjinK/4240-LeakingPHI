@@ -2,7 +2,24 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h2>Your Daily Entries</h2>
-  <a href="/entries/new" class="btn btn-primary">+ New Entry</a>
+  <div class="d-flex align-items-center gap-2">
+    <% if (Array.isArray(suggestions) && suggestions.length) { %>
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        data-bs-toggle="modal"
+        data-bs-target="#suggestionsReviewModal"
+      >
+        Rate AI Suggestions
+      </button>
+    <% } %>
+    <% if (entries.length) { %>
+      <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#checkinModal">
+        Check-in
+      </button>
+    <% } %>
+    <a href="/entries/new" class="btn btn-primary">+ New Entry</a>
+  </div>
 </div>
 
 <% if (!entries.length) { %>
@@ -31,7 +48,7 @@
                 <td><%= e.waterCups ?? '-' %></td>
                 <td><%= e.exerciseMinutes ?? '-' %></td>
                 <td><%= e.mood ?? '-' %></td>
-                <td><%= e.notes ? e.notes.slice(0, 40) + (e.notes.length > 40 ? '…' : '') : '-' %></td>
+                <td><%= e.notes ? e.notes.slice(0, 40) + (e.notes.length > 40 ? '...' : '') : '-' %></td>
                 <td class="text-end">
                   <a href="/entries/<%= e.id %>/edit" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
                   <form action="/entries/<%= e.id %>/delete" method="POST" class="d-inline">
@@ -47,6 +64,114 @@
       </div>
     </div>
   </div>
+<% } %>
+
+<% if (entries.length) { %>
+<div class="modal fade" id="checkinModal" tabindex="-1" aria-labelledby="checkinModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="/entries/check-in" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title" id="checkinModalLabel">Check-in</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>How are you feeling today?</p>
+          <div class="mb-3">
+            <label for="checkin-mood" class="form-label">Mood (1-10)</label>
+            <input type="number" class="form-control" id="checkin-mood" name="mood" min="1" max="10" required>
+          </div>
+          <div class="mb-3">
+            <label for="checkin-notes" class="form-label">Notes (optional)</label>
+            <textarea class="form-control" id="checkin-notes" name="notes" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Skip</button>
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<% } %>
+
+<% if (Array.isArray(suggestions) && suggestions.length) { %>
+<div class="modal fade" id="suggestionsReviewModal" tabindex="-1" aria-labelledby="suggestionsReviewLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="suggestionsReviewForm" action="/entries/check-in" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title" id="suggestionsReviewLabel">How were your last AI tips?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted mb-3">Rate the most recent AI suggestion so we can improve future ideas.</p>
+          <% const latestSuggestion = suggestions[0]; %>
+          <div class="card border-0 shadow-sm" data-suggestion-card>
+            <div class="card-body">
+              <input type="hidden" class="suggestion-id" value="<%= latestSuggestion.id || 0 %>">
+              <input type="hidden" class="suggestion-text" value="<%= latestSuggestion.suggestion || latestSuggestion %>">
+              <p class="text-uppercase text-secondary small mb-1">Latest suggestion</p>
+              <p class="fw-semibold mb-3"><%= latestSuggestion.suggestion || latestSuggestion %></p>
+              <% if (latestSuggestion.rating) { %>
+                <p class="text-muted small mb-2">Previous rating: <%= latestSuggestion.rating %></p>
+              <% } %>
+              <div class="d-flex align-items-center">
+                <label class="form-label me-3 mb-0" for="review-rating-0">Your rating (1-10)</label>
+                <input
+                  type="range"
+                  class="form-range flex-grow-1 suggestion-rating"
+                  min="1"
+                  max="10"
+                  value="<%= latestSuggestion.rating || 5 %>"
+                  id="review-rating-0"
+                />
+                <span class="ms-2 text-muted small" data-rating-label>5/10</span>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" name="suggestionFeedback" id="reviewSuggestionFeedback" />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-primary">Submit ratings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const reviewModalEl = document.getElementById('suggestionsReviewModal');
+    const reviewForm = document.getElementById('suggestionsReviewForm');
+    const reviewPayload = document.getElementById('reviewSuggestionFeedback');
+    const cards = reviewModalEl ? reviewModalEl.querySelectorAll('[data-suggestion-card]') : [];
+
+    cards.forEach(card => {
+      const range = card.querySelector('.suggestion-rating');
+      const label = card.querySelector('[data-rating-label]');
+      if (!range || !label) return;
+      const updateLabel = () => { label.textContent = `${range.value}/10`; };
+      updateLabel();
+      range.addEventListener('input', updateLabel);
+    });
+
+    if (reviewForm && reviewPayload) {
+      reviewForm.addEventListener('submit', () => {
+        const payload = [];
+        cards.forEach(card => {
+          const id = card.querySelector('.suggestion-id')?.value || '';
+          const text = card.querySelector('.suggestion-text')?.value || '';
+          const rating = card.querySelector('.suggestion-rating')?.value || '';
+          payload.push({ id, suggestion: text, rating });
+        });
+        reviewPayload.value = JSON.stringify(payload);
+      });
+    }
+  });
+</script>
 <% } %>
 
 <%- include('partials/footer') %>
