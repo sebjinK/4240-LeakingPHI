@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS baseline (
     id INT AUTO_INCREMENT PRIMARY KEY,
-     user_id INT NOT NULL UNIQUE,
+    user_id INT NOT NULL UNIQUE,
     age_years INT,
     gender VARCHAR (36),
     height VARCHAR (36),
