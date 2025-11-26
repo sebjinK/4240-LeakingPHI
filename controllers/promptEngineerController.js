@@ -1,5 +1,7 @@
 // controllers/aiController.js
+const pool = require('../config');
 require("dotenv").config();
+
 const { InferenceClient } = require("@huggingface/inference");
 
 const db = require("../db"); // ← if you want DB storage later
@@ -141,6 +143,17 @@ Previous suggestion (from your system):
 - My rating of that suggestion (or difficulty/effectiveness): ${rating || "not provided"}
 
 Please generate feedback following the output format you were instructed to use.
+
+Please respond ONLY using the specified tags:
+<FEEDBACK>
+[Your supportive feedback here]
+</FEEDBACK>
+<FOCUS>
+[one word: sleep | water | exercise | mood | nutrition | general]
+</FOCUS>
+
+Do not add anything outside these tags.
+
 `.trim();
 }
 
@@ -157,8 +170,8 @@ function parseTag(text, tagName) {
 }
 
 async function getLastSuggestion(userId) {
-  const [rows] = await db.query(
-    "SELECT * FROM suggestions WHERE user_id = ? LIMIT 1",
+    const [rows] = await db.query(
+    "SELECT suggestion, rating FROM suggestions WHERE user_id = ? LIMIT 1",
     [userId]
   );
   return rows[0] || null;
@@ -179,10 +192,36 @@ async function getUserIntake(userId) {
 }
 
 async function dailyPrompt(req, res) {
+    const conn = await pool.getConnection();
+
   try {
-    const intake = req.body.intake || {};
-    const daily = req.body.daily || {};
-    const lastSuggestion = req.body.lastSuggestion || {};
+    const userId = req.body.userId;
+
+    // Fetch user intake data
+    const intakeData = await getUserIntake(userId);
+    const intake = {
+      ...intakeData.baseline,
+      ...intakeData.preferences,
+      ...intakeData.goals
+    };
+    // fetch last suggestion from DB
+    const suggestion = await getLastSuggestion(userId);
+    if (!suggestion) {
+        return res.status(400).json({ ok: false, error: "No previous suggestion found for user." });
+    }
+    if (!suggestion.rating) {
+        return res.status(400).json({ ok: false, error: "Previous suggestion has no rating." });
+    }
+    let lastSuggestion = {
+        ...suggestion.suggestion,
+        ...suggestion.rating
+    };
+    
+    // fetch daily log from request body
+    const daily = req.body.daily;
+    if (!daily) {
+        return res.status(400).json({ ok: false, error: "Daily log data is required." });
+    }
 
     const systemPrompt = buildBasisSystemPrompt(intake);
     const userPrompt = buildDailyUserPrompt(daily, lastSuggestion);
@@ -208,16 +247,37 @@ async function dailyPrompt(req, res) {
       focus
     });
   } catch (err) {
-    console.error("DAILY ERROR:", err);
-    res.status(500).json({ ok: false, error: "Failed to generate daily output." });
+        console.error("DAILY ERROR:", err);
+        res.status(500).json({ ok: false, error: "Failed to generate daily output." });
+  } finally {
+        conn.release();
   }
 }
 
 async function aiSuggestion(req, res) {
-  res.json({
-    ok: true,
-    message: "Not implemented yet — connect this to your DB.",
-  });
+    const conn = await pool.getConnection();
+    try {
+        const userId = req.query.userId;
+        
+        // Fetch suggestion from DB (you need to implement this function)
+        const suggestion = await getLastSuggestion(userId);
+
+        if (!suggestion) {
+            return res.json({ ok: true, error: "No suggestion found for user." });
+        }
+
+        res.json({
+            ok: true,
+            suggestion: suggestions.suggestion,
+            rating: suggestions.rating
+        })
+
+    } catch (err) {
+        console.error("AI SUGGESTION ERROR:", err);
+        res.status(500).json({ ok: false, error: "Failed to get AI suggestion." });
+    } finally {
+        conn.release();
+    }
 }
 
 module.exports = {
