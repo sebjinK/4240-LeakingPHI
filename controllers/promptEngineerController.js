@@ -4,7 +4,6 @@ require("dotenv").config();
 
 const { InferenceClient } = require("@huggingface/inference");
 
-const db = require("../db"); // ← if you want DB storage later
 
 const client = new InferenceClient(process.env.HF_TOKEN);
 const MODEL_ID =
@@ -167,24 +166,28 @@ function parseTag(text, tagName) {
 }
 
 async function getLastSuggestion(userId) {
-  const [rows] = await db.query(
+  const conn = await pool.getConnection();
+  const rows = await conn.query(
     "SELECT id, suggestion, rating FROM suggestions WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
     [userId]
   );
+  if (conn) { conn.release(); }
   return rows[0] || null;
 }
 
 async function getUserIntake(userId) {
-  const [[baselineRows], [preferencesRows], [goalsRows]] = await Promise.all([
-    db.query("SELECT CAST(age_years AS CHAR) AS age_years, gender, height, user_weight, medical_condition, activity_level, dietary_prefrences FROM baseline WHERE user_id = ?", [userId]),
-    db.query("SELECT CAST(intensity AS CHAR) AS intensity, exercise_enjoyment FROM preferences WHERE user_id = ?", [userId]),
-    db.query("SELECT primary_goal, short_goal, long_goal, CAST(days_goal AS CHAR) AS days_goal FROM goals WHERE user_id = ?", [userId]),
+  const conn = await pool.getConnection();
+  const [baselineRows, preferencesRows, goalsRows] = await Promise.all([
+    conn.query("SELECT CAST(age_years AS CHAR) AS age_years, gender, height, user_weight, medical_condition, activity_level, dietary_prefrences FROM baseline WHERE user_id = ?", [userId]),
+    conn.query("SELECT CAST(intensity AS CHAR) AS intensity, exercise_enjoyment FROM preferences WHERE user_id = ?", [userId]),
+    conn.query("SELECT primary_goal, short_goal, long_goal, CAST(days_goal AS CHAR) AS days_goal FROM goals WHERE user_id = ?", [userId]),
   ]);
 
   const baseline = baselineRows[0] || null;
   const preferences = preferencesRows[0] || null;
   const goals = goalsRows[0] || null;
 
+  if (conn) { conn.release(); }
   return { baseline, preferences, goals };
 }
 
