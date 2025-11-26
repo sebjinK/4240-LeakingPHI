@@ -74,18 +74,6 @@ python3 qwen_server.py
 ### Access the App in Docker
 Open your browser and visit: **http://localhost:3000/dashboard**
 
-## Environment Variables
-
-### Local Development (.env file)
-```properties
-MYSQL_ROOT_PASSWORD=4240-LeakingPHI
-MYSQL_DATABASE=health_ai
-MYSQL_USER=healthuser
-MYSQL_PASSWORD=healthpass
-SESSION_SECRET=incrediblysecretkeyshhh
-HF_TOKEN=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
-```
-
 ### Docker (from .env, passed via docker-compose.yml)
 The `docker-compose.yml` reads from `.env` and passes:
 - `MYSQL_ROOT_PASSWORD`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD` → mariadb service
