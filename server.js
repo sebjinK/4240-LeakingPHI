@@ -5,12 +5,10 @@ const path = require('path');
 const session = require('express-session');
 const bodyParser = require('body-parser');
 
+
 const generalRoutes = require('./routes/generalRoutes');
 const authRoutes = require('./routes/authRoutes');
 const baselineRoutes = require('./routes/baselineRoutes');
-const dashboardRoutes = require('./routes/dashboardRoutes');
-const entryRoutes = require('./routes/entryRoutes');
-const aiRoutes = require('./routes/aiRoutes');
 const promptEngineerRoutes = require('./routes/promptEngineerRoutes');
 
 const app = express();
@@ -21,6 +19,8 @@ app.set('views', path.join(__dirname, 'views'));
 
 // ====== MIDDLEWARE ======
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(
