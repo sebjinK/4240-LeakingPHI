@@ -196,12 +196,15 @@ async function dailyPrompt(req, res) {
     const userId = req.session.userId;
 
     // Fetch user intake data
-    const intakeData = await getUserIntake(userId);
-    const intake = {
-      ...intakeData.baseline,
-      ...intakeData.preferences,
-      ...intakeData.goals
-    };
+    const { baseline, goals, preferences } = await getUserIntake(userId);
+    // const intake = {
+    //   ...intakeData.baseline,
+    //   ...intakeData.preferences,
+    //   ...intakeData.goals
+    // };
+    // const baseline = intakeData.baseline;
+    // const preferences = intakeData.preferences;
+    // const goals = intakeData.goals;
     // fetch last suggestion from DB
     const suggestionRow = await getLastSuggestion(userId);
 
@@ -216,8 +219,8 @@ async function dailyPrompt(req, res) {
       return res.status(400).json({ ok: false, error: "Daily log data is required." });
     }
 
-    const systemPrompt = buildBasisSystemPrompt(intake);
-    const userPrompt = buildDailyUserPrompt(daily, lastSuggestion);
+    const systemPrompt = buildBasisSystemPrompt();
+    const userPrompt = buildDailyUserPrompt(daily, lastSuggestion, baseline, preferences, goals);
 
     const full = await chatCompletion(
       [

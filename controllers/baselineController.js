@@ -13,9 +13,6 @@ async function getBaseline(req, res) {
 
   try {
 
-
-
-
     const baselineRows = await conn.query("SELECT CAST(age_years AS CHAR) AS age_years, gender, height, user_weight, medical_condition, activity_level, dietary_preferences FROM baseline WHERE user_id = ?", [userId]);
     const preferencesRows = await conn.query("SELECT CAST(intensity AS CHAR) AS intensity, exercise_enjoyment FROM preferences WHERE user_id = ?", [userId]);
     const goalsRows = await conn.query("SELECT primary_goal, short_goal, long_goal, CAST(days_goal AS CHAR) AS days_goal FROM goals WHERE user_id = ?", [userId]);
