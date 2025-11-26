@@ -2,9 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const promptEngineerController = require('../controllers/promptEngineerController');
-const authMiddleware = require('../middleware/auth');
+const requireAuth = require('../middleware/auth');
 
-router.post('/daily', dailyPrompt);
-router.get('/aiSuggestion', aiSuggestion);
+router.post('/daily', requireAuth, promptEngineerController.dailyPrompt);
+router.get('/getSuggestion', requireAuth, promptEngineerController.getSuggestion);
+router.put('/setRating', requireAuth, promptEngineerController.setRating);
 
 module.exports = router;

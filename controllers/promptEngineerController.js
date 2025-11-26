@@ -11,15 +11,66 @@ const MODEL_ID =
   process.env.HF_MODEL_ID || "Qwen/Qwen2.5-1.5B-Instruct:featherless-ai";
 
 /* -------------------------------------------------------------------------- */
-/*                          🔥 PROMPT BUILDERS HERE 🔥                         */
+/*                          Local Prompt Builders                             */
 /* -------------------------------------------------------------------------- */
 
-// SYSTEM PROMPT — built from baseline, preferences, and goals tables
-function buildBasisSystemPrompt(
+// BUILD SYSTEM PROMPT — built from baseline, preferences, and goals tables
+function buildBasisSystemPrompt() {
+  return `
+You are the Fitness Buddy, a friendly wellness assistant.
+
+YOUR ROLE:
+- Be supportive and non-judgmental.
+- When given a daily log, acknowledge what the user did today.
+- Mention progress toward their goals only when appropriate.
+- Provide 1–2 small, realistic, personalized suggestions that fit their goals and preferences.
+- Match the intensity of suggestions loosely to the "intensity" preference.
+- Do NOT offer medical diagnoses or emergency advice.
+- STRICTLY adhere to any stated medical conditions, especially injuries and dietary restrictions.
+- DO NOT recommend anything that goes against stated medical conditions or dietary restrictions.
+
+OUTPUT FORMAT (MANDATORY):
+You MUST respond using this exact structure to EVERY daily check-in:
+
+<FEEDBACK>
+[2–7 sentences of friendly, personalized, supportive feedback]
+</FEEDBACK>
+<FOCUS>
+[one word: sleep | hydration | exercise | mood | nutrition ]
+</FOCUS>
+
+Do not add anything outside these tags.
+`.trim();
+}
+
+// DAILY USER PROMPT — today's check-in + last suggestion (from suggestions table)
+function buildDailyUserPrompt(
+  daily = {},
+  lastSuggestion = {},
   baseline = {},
   preferences = {},
-  goals = {}
-) {
+  goals = {}) {
+  const {
+    // daily log values – you can map these from your `entries` table or request body
+    sleepHours,
+    hydration,
+    meals,
+    exerciseType,
+    exerciseDuration,
+    energyLevel,
+    workoutFeelingDuring,
+    workoutFeelingAfter,
+    workedWell,
+    followed,
+    otherNotes,
+  } = daily;
+
+  // From `suggestions` table: suggestion (TEXT), rating (VARCHAR(10))
+  const {
+    suggestion,  // text of previous suggestion
+    rating,      // how the user rated it (difficulty/effectiveness)
+  } = lastSuggestion;
+
   const {
     age_years,
     gender,
@@ -43,8 +94,6 @@ function buildBasisSystemPrompt(
   } = goals;
 
   return `
-You are the AI Health Habit Tracker, a friendly wellness assistant.
-
 USER PROFILE (from baseline):
 - Age (years): ${age_years ?? "unknown"}
 - Gender: ${gender ?? "unknown"}
@@ -64,78 +113,24 @@ GOALS:
 - Long-term goal(s): ${long_goal || "not specified"}
 - Target exercise days per week: ${days_goal ?? "not specified"}
 
-YOUR ROLE:
-- Be supportive and non-judgmental.
-- When given a daily log, acknowledge what the user did today.
-- Mention progress toward their goals only when appropriate.
-- Provide 1–2 small, realistic, personalized suggestions that fit their goals and preferences.
-- Match the intensity of suggestions loosely to the "intensity" preference.
-- Do NOT offer medical diagnoses or emergency advice.
-
-OUTPUT FORMAT (MANDATORY):
-You MUST respond using this exact structure to EVERY daily check-in:
-
-<FEEDBACK>
-[2–5 sentences of friendly, personalized, supportive feedback]
-</FEEDBACK>
-<FOCUS>
-[one word: sleep | water | exercise | mood | nutrition | general]
-</FOCUS>
-
-Do not add anything outside these tags.
-`.trim();
-}
-
-// DAILY USER PROMPT — today's check-in + last suggestion (from suggestions table)
-function buildDailyUserPrompt(daily = {}, lastSuggestion = {}) {
-  const {
-    // daily log values – you can map these from your `entries` table or request body
-    sleepHours,
-    waterCups,
-    meals,
-    drinks,
-    didExercise,
-    exerciseType,
-    exerciseMinutes,
-    mood,
-    energyLevel,
-    feelingToday,
-    workoutFeelingDuring,
-    workoutFeelingAfter,
-    workedWell,
-    challenges,
-    otherNotes,
-  } = daily;
-
-  // From `suggestions` table: suggestion (TEXT), rating (VARCHAR(10))
-  const {
-    suggestion,  // text of previous suggestion
-    rating,      // how the user rated it (difficulty/effectiveness)
-  } = lastSuggestion;
-
-  return `
 Here is my daily check-in:
 
 - Sleep hours: ${sleepHours ?? "not provided"}
-- Water cups: ${waterCups ?? "not provided"}
+- Hydration: ${hydration ?? "not provided"}
 - Meals: ${meals || "not provided"}
-- Drinks: ${drinks || "not provided"}
 
 Exercise:
-- Did I exercise? ${didExercise ?? "not provided"}
 - Exercise type: ${exerciseType || "none"}
-- Exercise minutes: ${exerciseMinutes ?? "not provided"}
+- Exercise duration: ${exerciseDuration ?? "not provided"}
 - Felt during workout: ${workoutFeelingDuring || "not provided"}
 - Felt after workout: ${workoutFeelingAfter || "not provided"}
 
 Mood & Energy:
-- Mood today: ${mood ?? "not provided"}
 - Energy level: ${energyLevel ?? "not provided"}
-- General feeling today: ${feelingToday || "not provided"}
 
 Reflection:
 - What worked well: ${workedWell || "not provided"}
-- Challenges: ${challenges || "not provided"}
+- Did I follow the most recent suggesion?: ${followed || "not provided"}
 - Other notes: ${otherNotes || "none"}
 
 Previous suggestion (from your system):
@@ -149,7 +144,7 @@ Please respond ONLY using the specified tags:
 [Your supportive feedback here]
 </FEEDBACK>
 <FOCUS>
-[one word: sleep | water | exercise | mood | nutrition | general]
+[one word: sleep | hydration | exercise | mood | nutrition]
 </FOCUS>
 
 Do not add anything outside these tags.
@@ -158,8 +153,10 @@ Do not add anything outside these tags.
 }
 
 
+
+
 /* -------------------------------------------------------------------------- */
-/*                     🔥 REMAINDER OF YOUR CONTROLLERS 🔥                    */
+/*                           Controllers/Local Helpers                        */
 /* -------------------------------------------------------------------------- */
 
 // helper to extract tagged content
@@ -170,8 +167,8 @@ function parseTag(text, tagName) {
 }
 
 async function getLastSuggestion(userId) {
-    const [rows] = await db.query(
-    "SELECT suggestion, rating FROM suggestions WHERE user_id = ? LIMIT 1",
+  const [rows] = await db.query(
+    "SELECT id, suggestion, rating FROM suggestions WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
     [userId]
   );
   return rows[0] || null;
@@ -179,9 +176,9 @@ async function getLastSuggestion(userId) {
 
 async function getUserIntake(userId) {
   const [[baselineRows], [preferencesRows], [goalsRows]] = await Promise.all([
-    db.query("SELECT age_years, gender, height, user_weight, medical_condition, activity_level, dietary_prefrences FROM baseline WHERE user_id = ?", [userId]),
-    db.query("SELECT intensity, exercise_enjoyment FROM preferences WHERE user_id = ?", [userId]),
-    db.query("SELECT primary_goal, short_goal, long_goal, days_goal FROM goals WHERE user_id = ?", [userId]),
+    db.query("SELECT CAST(age_years AS CHAR) AS age_years, gender, height, user_weight, medical_condition, activity_level, dietary_prefrences FROM baseline WHERE user_id = ?", [userId]),
+    db.query("SELECT CAST(intensity AS CHAR) AS intensity, exercise_enjoyment FROM preferences WHERE user_id = ?", [userId]),
+    db.query("SELECT primary_goal, short_goal, long_goal, CAST(days_goal AS CHAR) AS days_goal FROM goals WHERE user_id = ?", [userId]),
   ]);
 
   const baseline = baselineRows[0] || null;
@@ -192,7 +189,7 @@ async function getUserIntake(userId) {
 }
 
 async function dailyPrompt(req, res) {
-    const conn = await pool.getConnection();
+  const conn = await pool.getConnection();
 
   try {
     const userId = req.body.userId;
@@ -205,28 +202,21 @@ async function dailyPrompt(req, res) {
       ...intakeData.goals
     };
     // fetch last suggestion from DB
-    const suggestion = await getLastSuggestion(userId);
-    if (!suggestion) {
-        return res.status(400).json({ ok: false, error: "No previous suggestion found for user." });
-    }
-    if (!suggestion.rating) {
-        return res.status(400).json({ ok: false, error: "Previous suggestion has no rating." });
-    }
-    let lastSuggestion = {
-        ...suggestion.suggestion,
-        ...suggestion.rating
+    const suggestionRow = await getLastSuggestion(userId);
+
+    const lastSuggestion = {
+      suggestion: suggestionRow?.suggestion || null,
+      rating: suggestionRow?.rating || null
     };
-    
+
     // fetch daily log from request body
     const daily = req.body.daily;
     if (!daily) {
-        return res.status(400).json({ ok: false, error: "Daily log data is required." });
+      return res.status(400).json({ ok: false, error: "Daily log data is required." });
     }
 
     const systemPrompt = buildBasisSystemPrompt(intake);
     const userPrompt = buildDailyUserPrompt(daily, lastSuggestion);
-
-    let full = "";
 
     const result = await client.chatCompletion({
       model: MODEL_ID,
@@ -236,52 +226,75 @@ async function dailyPrompt(req, res) {
       ]
     });
 
-    full = result.choices[0].message.content || "";
+    const full = result.choices[0].message.content || "";
 
     const feedback = parseTag(full, "FEEDBACK") || full.trim();
-    const focus = parseTag(full, "FOCUS") || "general";
+    const focus = parseTag(full, "FOCUS") || "none specified"
 
-    res.json({
+    const fullFeedback = `${feedback}\n\nWe suggest you focus on: ${focus}`;
+
+    return res.json({
       ok: true,
-      feedback,
-      focus
+      fullFeedback
     });
+
   } catch (err) {
-        console.error("DAILY ERROR:", err);
-        res.status(500).json({ ok: false, error: "Failed to generate daily output." });
+    console.error("DAILY ERROR:", err);
+    res.status(500).json({ ok: false, error: "Failed to generate daily output." });
   } finally {
-        conn.release();
+    conn.release();
   }
 }
 
-async function aiSuggestion(req, res) {
-    const conn = await pool.getConnection();
-    try {
-        const userId = req.query.userId;
-        
-        // Fetch suggestion from DB (you need to implement this function)
-        const suggestion = await getLastSuggestion(userId);
+async function getSuggestion(req, res) {
+  const conn = await pool.getConnection();
+  try {
+    const userId = req.query.userId;
 
-        if (!suggestion) {
-            return res.json({ ok: true, error: "No suggestion found for user." });
-        }
+    // Fetch suggestion from DB 
+    const suggestion = await getLastSuggestion(userId);
 
-        res.json({
-            ok: true,
-            suggestion: suggestions.suggestion,
-            rating: suggestions.rating
-        })
-
-    } catch (err) {
-        console.error("AI SUGGESTION ERROR:", err);
-        res.status(500).json({ ok: false, error: "Failed to get AI suggestion." });
-    } finally {
-        conn.release();
+    if (!suggestion) {
+      return res.json({ ok: true, error: "No suggestion found for user." });
     }
+
+    return res.json({
+      ok: true,
+      suggestion: suggestion.suggestion,
+      rating: suggestion.rating,
+      id: suggestion.id
+    })
+
+  } catch (err) {
+    console.error("RECENT SUGGESTION ERROR:", err);
+    res.status(500).json({ ok: false, error: "Failed to get most recent suggestion." });
+  } finally {
+    conn.release();
+  }
+}
+
+async function setRating(req, res) {
+  const conn = await pool.getConnection();
+  try {
+    const userId = req.query.userId;
+    const suggestionId = req.query.suggestionId;
+    const rating = req.query.rating;
+
+    await conn.execute(
+      `UPDATE suggestions SET rating = ? WHERE user_id = ? and id = ?`,
+      [rating, userId, suggestionId,]
+    );
+
+  } catch (err) {
+    console.error("Error setting rating: ", err);
+    res.status(500).json({ OK: false, error: "Failed to set rating." });
+  } finally {
+    conn.release();
+  }
 }
 
 module.exports = {
-  systemPrompt,
   dailyPrompt,
-  aiSuggestion,
+  getSuggestion,
+  setRating
 };
