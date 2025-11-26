@@ -15,6 +15,7 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_NAME: ${MYSQL_DATABASE}
       SESSION_SECRET: ${SESSION_SECRET}
+      HF_TOKEN: ${HF_TOKEN}
     depends_on:
       - mariadb
     networks:
@@ -39,6 +40,7 @@ services:
 
 networks:
   healthnet:
+
 
 volumes:
   mariadb_data:

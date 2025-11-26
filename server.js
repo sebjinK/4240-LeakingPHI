@@ -4,9 +4,10 @@ const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const bodyParser = require('body-parser');
+const requireAuth = require('./middleware/auth');
 
 
-const generalRoutes = require('./routes/generalRoutes');
+//const generalRoutes = require('./routes/generalRoutes');
 const authRoutes = require('./routes/authRoutes');
 const baselineRoutes = require('./routes/baselineRoutes');
 const promptEngineerRoutes = require('./routes/promptEngineerRoutes');
@@ -31,8 +32,24 @@ app.use(
   })
 );
 
+app.get('/', (req, res) => {
+  // If user is logged in, redirect to dashboard
+  if (req.session.userId) {
+    return res.redirect('/dashboard');
+  }
+  // Otherwise, show landing page (login/register prompt)
+  res.render('landing'); // make sure landing.ejs exists
+});
+
+app.get('/dashboard', requireAuth, (req, res) => {
+  res.render('dashboard'); // your dashboard.ejs
+});
+
+
+
+
 // ====== ROUTES ======
-app.use('/', generalRoutes);
+//app.use('/', generalRoutes);
 app.use('/', authRoutes);
 app.use('/', baselineRoutes);
 app.use('/', promptEngineerRoutes);

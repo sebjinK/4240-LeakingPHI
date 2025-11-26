@@ -21,4 +21,4 @@ function buildPartialUpdate(table, userId, data) {
         values,
     };
 }
-module.exports = { buildPartialUpdate };
+module.exports = buildPartialUpdate;

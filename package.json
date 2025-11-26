@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.4",
+    "axios": "^1.13.2",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
     "dotenv": "^16.6.1",
@@ -16,6 +17,7 @@
     "express-session": "^1.17.3",
     "express-validator": "^7.0.1",
     "mariadb": "^3.2.0",
+    "openai": "^6.9.1",
     "transformers": "^3.1.0"
   }
 }

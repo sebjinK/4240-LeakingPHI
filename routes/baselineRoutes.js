@@ -3,11 +3,13 @@
 const express = require('express');
 const router = express.Router();
 const requireAuth = require('../middleware/auth');
-const { createBaseline, getBaseline, updateBaseline, checkBaseline } = require('../controllers/baselineController');
+const baseLineController = require('../controllers/baselineController');
 
-router.get('/baseline', requireAuth, getBaseline);
-router.post('/baseline', requireAuth, createBaseline);
-router.put('/baseline', requireAuth, updateBaseline);
-router.get('/checkBaseline', requireAuth, checkBaseline);
+router.get('/baseline', requireAuth, baseLineController.getBaseline);
+// router.post('/baseline', requireAuth, baseLineController.createBaseline);
+// router.put('/baseline', requireAuth, baseLineController.updateBaseline);
+router.post('/baseline', requireAuth, baseLineController.upsertBaseline);
+router.put('/baseline', requireAuth, baseLineController.upsertBaseline);
+router.get('/checkBaseline', requireAuth, baseLineController.checkBaseline);
 
 module.exports = router;

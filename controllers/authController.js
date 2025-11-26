@@ -51,8 +51,9 @@ async function registerUser(req, res) {
     });
   }
 
+  const conn = await pool.getConnection();
+
   try {
-    const conn = await pool.getConnection();
 
     // Check existing email
     const existing = await conn.query(
@@ -61,7 +62,6 @@ async function registerUser(req, res) {
     );
 
     if (existing.length > 0) {
-      conn.release();
       return res.status(400).render('register', {
         errors: [{ msg: 'Email already in use' }],
         old: { name, email: normalizedEmail }
@@ -75,17 +75,17 @@ async function registerUser(req, res) {
       [name.trim(), normalizedEmail, hash]
     );
 
-    conn.release();
-
-    // Log user in, then go to baseline
+    // Log user in, then go to dashboard
     req.session.userId = Number(result.insertId);
     req.session.save(() => {
-      res.redirect('/baseline');
+      res.redirect('/dashboard');
     });
 
   } catch (err) {
     console.error('registerUser error:', err);
     res.status(500).send('Registration failed');
+  } finally {
+    conn.release();
   }
 };
 
@@ -101,15 +101,14 @@ async function loginUser(req, res) {
     });
   }
 
+  const conn = await pool.getConnection();
   try {
-    const conn = await pool.getConnection();
+
 
     const rows = await conn.query(
       'SELECT * FROM users WHERE email = ?',
       [normalizedEmail]
     );
-
-    conn.release();
 
     if (rows.length === 0) {
       return res.status(400).render('login', {
@@ -129,10 +128,13 @@ async function loginUser(req, res) {
     }
 
     req.session.userId = user.id;
-    res.redirect('/dashboard');
+    return res.redirect('/dashboard');
+
   } catch (err) {
     console.error('loginUser error:', err);
     res.status(500).send('Login failed');
+  } finally {
+    conn.release();
   }
 };
 

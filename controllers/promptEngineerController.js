@@ -1,13 +1,12 @@
 // controllers/aiController.js
 const pool = require('../config');
 require("dotenv").config();
+const { chatCompletion } = require('../helpers/hfChat');
+// const { InferenceClient } = require("@huggingface/inference");
 
-const { InferenceClient } = require("@huggingface/inference");
+// const client = new InferenceClient({ apiKey: hfToken });
 
-
-const client = new InferenceClient(process.env.HF_TOKEN);
-const MODEL_ID =
-  process.env.HF_MODEL_ID || "Qwen/Qwen2.5-1.5B-Instruct:featherless-ai";
+// const MODEL_ID = process.env.HF_MODEL_ID || "Qwen/Qwen2.5-1.5B-Instruct:featherless-ai";
 
 /* -------------------------------------------------------------------------- */
 /*                          Local Prompt Builders                             */
@@ -171,23 +170,22 @@ async function getLastSuggestion(userId) {
     "SELECT id, suggestion, rating FROM suggestions WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
     [userId]
   );
-  if (conn) { conn.release(); }
+  conn.release();
   return rows[0] || null;
 }
 
 async function getUserIntake(userId) {
   const conn = await pool.getConnection();
-  const [baselineRows, preferencesRows, goalsRows] = await Promise.all([
-    conn.query("SELECT CAST(age_years AS CHAR) AS age_years, gender, height, user_weight, medical_condition, activity_level, dietary_prefrences FROM baseline WHERE user_id = ?", [userId]),
-    conn.query("SELECT CAST(intensity AS CHAR) AS intensity, exercise_enjoyment FROM preferences WHERE user_id = ?", [userId]),
-    conn.query("SELECT primary_goal, short_goal, long_goal, CAST(days_goal AS CHAR) AS days_goal FROM goals WHERE user_id = ?", [userId]),
-  ]);
+  const baselineRows = await conn.query("SELECT CAST(age_years AS CHAR) AS age_years, gender, height, user_weight, medical_condition, activity_level, dietary_preferences FROM baseline WHERE user_id = ?", [userId]);
+  const preferencesRows = await conn.query("SELECT CAST(intensity AS CHAR) AS intensity, exercise_enjoyment FROM preferences WHERE user_id = ?", [userId]);
+  const goalsRows = await conn.query("SELECT primary_goal, short_goal, long_goal, CAST(days_goal AS CHAR) AS days_goal FROM goals WHERE user_id = ?", [userId]);
+
 
   const baseline = baselineRows[0] || null;
   const preferences = preferencesRows[0] || null;
   const goals = goalsRows[0] || null;
 
-  if (conn) { conn.release(); }
+  conn.release();
   return { baseline, preferences, goals };
 }
 
@@ -221,15 +219,12 @@ async function dailyPrompt(req, res) {
     const systemPrompt = buildBasisSystemPrompt(intake);
     const userPrompt = buildDailyUserPrompt(daily, lastSuggestion);
 
-    const result = await client.chatCompletion({
-      model: MODEL_ID,
-      messages: [
+    const full = await chatCompletion(
+      [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ]
-    });
-
-    const full = result.choices[0].message.content || "";
+    );
 
     const feedback = parseTag(full, "FEEDBACK") || full.trim();
     const focus = parseTag(full, "FOCUS") || "none specified"
@@ -245,7 +240,7 @@ async function dailyPrompt(req, res) {
     console.error("DAILY ERROR:", err);
     res.status(500).json({ ok: false, error: "Failed to generate daily output." });
   } finally {
-    if (conn) { conn.release(); }
+    conn.release();
   }
 }
 
@@ -272,7 +267,7 @@ async function getSuggestion(req, res) {
     console.error("RECENT SUGGESTION ERROR:", err);
     res.status(500).json({ ok: false, error: "Failed to get most recent suggestion." });
   } finally {
-    if (conn) { conn.release(); }
+    conn.release();
   }
 }
 
@@ -292,7 +287,7 @@ async function setRating(req, res) {
     console.error("Error setting rating: ", err);
     res.status(500).json({ OK: false, error: "Failed to set rating." });
   } finally {
-    if (conn) { conn.release(); }
+    conn.release();
   }
 }
 
