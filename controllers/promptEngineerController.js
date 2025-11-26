@@ -192,7 +192,7 @@ async function dailyPrompt(req, res) {
   const conn = await pool.getConnection();
 
   try {
-    const userId = req.body.userId;
+    const userId = req.session.userId;
 
     // Fetch user intake data
     const intakeData = await getUserIntake(userId);
@@ -242,7 +242,7 @@ async function dailyPrompt(req, res) {
     console.error("DAILY ERROR:", err);
     res.status(500).json({ ok: false, error: "Failed to generate daily output." });
   } finally {
-    conn.release();
+    if (conn) { conn.release(); }
   }
 }
 
@@ -269,14 +269,14 @@ async function getSuggestion(req, res) {
     console.error("RECENT SUGGESTION ERROR:", err);
     res.status(500).json({ ok: false, error: "Failed to get most recent suggestion." });
   } finally {
-    conn.release();
+    if (conn) { conn.release(); }
   }
 }
 
 async function setRating(req, res) {
   const conn = await pool.getConnection();
   try {
-    const userId = req.query.userId;
+    const userId = req.session.userId;
     const suggestionId = req.query.suggestionId;
     const rating = req.query.rating;
 
@@ -289,7 +289,7 @@ async function setRating(req, res) {
     console.error("Error setting rating: ", err);
     res.status(500).json({ OK: false, error: "Failed to set rating." });
   } finally {
-    conn.release();
+    if (conn) { conn.release(); }
   }
 }
 

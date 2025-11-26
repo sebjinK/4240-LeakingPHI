@@ -17,6 +17,8 @@ async function getBaseline(req, res) {
   } catch (err) {
     console.error('getBaseline error: ', err);
     res.status(500).json({ ok: false, message: 'Could not retrieve baseline data.' });
+  } finally {
+    if (conn) { conn.release(); }
   }
 };
 
