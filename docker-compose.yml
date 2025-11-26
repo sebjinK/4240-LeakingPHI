@@ -16,8 +16,29 @@ services:
       DB_NAME: ${MYSQL_DATABASE}
       SESSION_SECRET: ${SESSION_SECRET}
       HF_TOKEN: ${HF_TOKEN}
+      DEBUG_ENABLE: 'true'
+      # When running under docker-compose, use the internal qwen service
+      ASSIST_API_URL: http://qwen:5005/generate
     depends_on:
       - mariadb
+      - qwen
+    networks:
+      - healthnet
+
+  qwen:
+    build:
+      context: .
+      dockerfile: Dockerfile.qwen
+    container_name: health_qwen
+    restart: always
+    ports:
+      - "5005:5005"
+    # mount local models directory into container so the model files don't need to be copied into image
+    volumes:
+      - ./models:/app/models:ro
+    environment:
+      # point MODEL_PATH to the mounted model directory
+      MODEL_PATH: /app/models/qwen2.5-0.5b-instruct
     networks:
       - healthnet
 

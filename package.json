@@ -4,7 +4,9 @@
   "description": "Fitness Buddy - frontend + Node.js backend scaffold with future MariaDB & LLM support",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "DB_HOST=127.0.0.1 DB_PORT=3307 DB_USER=healthuser DB_PASSWORD=healthpass DB_NAME=health_ai PORT=3001 node server.js",
+    "docker": "node server.js"
   },
   "dependencies": {
     "@huggingface/inference": "^4.13.4",

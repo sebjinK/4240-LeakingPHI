@@ -322,11 +322,53 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             const data = await res.json();
             if (data.ok) {
-                alert("Daily Check-In submitted!");
+                // show assistant reply inline in modal
+                const assistantModal = document.getElementById('assistantModal');
+                const assistantContent = document.getElementById('assistantContent');
+                const assistantCloseBtn = document.getElementById('assistantCloseBtn');
+                const assistantDebug = document.getElementById('assistantDebug');
+                const assistantDebugPre = document.getElementById('assistantDebugPre');
+
+                assistantContent.textContent = data.fullFeedback || "(no assistant response)";
+                assistantDebug.style.display = 'none';
+                assistantDebugPre.textContent = '';
+
+                // open assistant modal
+                assistantModal.style.display = 'block';
+
+                // close handlers
+                assistantCloseBtn.onclick = function () {
+                    assistantModal.style.display = 'none';
+                };
+
+                // also populate suggestion box for convenience
+                const suggestionContent = document.getElementById('suggestionContent');
+                if (suggestionContent) suggestionContent.textContent = data.fullFeedback || '';
+
+                // hide daily modal
                 dailyModal.style.display = "none";
+            } else {
+                // show error details for debugging
+                console.error('Daily submit error:', data);
+                const assistantModal = document.getElementById('assistantModal');
+                const assistantContent = document.getElementById('assistantContent');
+                const assistantDebug = document.getElementById('assistantDebug');
+                const assistantDebugPre = document.getElementById('assistantDebugPre');
+                assistantContent.textContent = 'Error: Failed to generate daily output.';
+                assistantDebugPre.textContent = JSON.stringify(data, null, 2);
+                assistantDebug.style.display = 'block';
+                assistantModal.style.display = 'block';
             }
         } catch (err) {
             console.error("Error submitting daily check-in:", err);
+            const assistantModal = document.getElementById('assistantModal');
+            const assistantContent = document.getElementById('assistantContent');
+            const assistantDebug = document.getElementById('assistantDebug');
+            const assistantDebugPre = document.getElementById('assistantDebugPre');
+            assistantContent.textContent = 'Error submitting daily check-in. See debug info.';
+            assistantDebugPre.textContent = err && err.stack ? err.stack : String(err);
+            assistantDebug.style.display = 'block';
+            assistantModal.style.display = 'block';
         }
     });
     // ---------- INITIAL LOAD ----------

@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Debug Test Page</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    textarea { width: 100%; height: 160px; }
+    pre { background: #f6f6f6; padding: 12px; border-radius: 4px; }
+    .btn { padding: 8px 12px; margin: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Debug: Test AI Daily Generation</h1>
+  <p>Click "Send test payload" to POST a sample daily payload to <code>/debug/daily</code> and display the response.</p>
+
+  <button id="sendBtn" class="btn">Send test payload</button>
+  <button id="sendCustomBtn" class="btn">Send custom payload</button>
+  <div id="formArea" style="margin-top:12px; display:none;">
+    <p>Customize the <code>daily</code> JSON (only edit inside the object):</p>
+    <textarea id="customPayload">{
+  "daily": {
+    "energyLevel": "Neutral",
+    "sleepHours": 7,
+    "meals": "eggs",
+    "hydration": "water",
+    "didExercise": "No",
+    "exerciseType": null,
+    "exerciseDuration": null,
+    "workoutFeelingDuring": null,
+    "workoutFeelingAfter": null,
+    "followed": "No",
+    "workedWell": "Good workout",
+    "otherNotes": ""
+  }
+}</textarea>
+    <br>
+    <button id="sendNow" class="btn">Send custom payload now</button>
+  </div>
+
+  <h3>Response</h3>
+  <pre id="response">(no response yet)</pre>
+
+  <script>
+    async function sendPayload(payload) {
+      try {
+        const res = await fetch('/debug/daily', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        document.getElementById('response').textContent = JSON.stringify({status: res.status, body: data}, null, 2);
+      } catch (err) {
+        document.getElementById('response').textContent = 'Fetch error: ' + String(err);
+      }
+    }
+
+    document.getElementById('sendBtn').addEventListener('click', () => {
+      const payload = { daily: { energyLevel: 'Neutral', sleepHours: 7, meals: 'eggs', hydration: 'water', didExercise: 'No', exerciseType: null, exerciseDuration: null, workoutFeelingDuring: null, workoutFeelingAfter: null, followed: 'No', workedWell: 'Good workout', otherNotes: '' } };
+      sendPayload(payload);
+    });
+
+    document.getElementById('sendCustomBtn').addEventListener('click', () => {
+      document.getElementById('formArea').style.display = 'block';
+    });
+
+    document.getElementById('sendNow').addEventListener('click', () => {
+      try {
+        const txt = document.getElementById('customPayload').value;
+        const obj = JSON.parse(txt);
+        sendPayload(obj);
+      } catch (err) {
+        document.getElementById('response').textContent = 'Invalid JSON: ' + err;
+      }
+    });
+  </script>
+</body>
+</html>

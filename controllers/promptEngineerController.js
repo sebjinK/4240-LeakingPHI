@@ -221,44 +221,39 @@ async function dailyPrompt(req, res) {
     const systemPrompt = buildBasisSystemPrompt();
     const userPrompt = buildDailyUserPrompt(daily, lastSuggestion, baseline, preferences, goals);
 
-    // console.log(JSON.stringify({
-    //   model: 'Qwen/Qwen2.5-1.5B-Instruct',
-    //   messages: [
-    //     { role: 'system', content: systemPrompt },
-    //     { role: 'user', content: userPrompt }
-    //   ]
-    // }, null, 2));
+      // Call the local Qwen model via FastAPI
 
-    //@REMOVE DEBUG
-    // const response = await client.chatCompletion({
-    //   "model": 'Qwen/Qwen2.5-1.5B-Instruct',
-    //   "messages": [
-    //     { "role": 'system', content: 'You are a helpful assistant.' },
-    //     { "role": 'user', content: 'Hello!' }
-    //   ]
-    // });
-    // console.log(response);
-
-    const response = await client.chatCompletion({
-
-      "messages": [
-        {
-          "role": "system",
-          "content": systemPrompt
-        },
-        {
-          "role": "user",
-          "content": userPrompt
-        },
-      ], "model": "gpt-3.5-turbo",
-    });
-
-    full = response.choices[0].message;
+      // Qwen local /generate expects a JSON array of messages (not an object with `messages`)
+      const assistUrl = process.env.ASSIST_API_URL || 'http://localhost:5005/generate';
+      const assistResponse = await fetch(assistUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ]),
+      });
 
 
+      if (!assistResponse.ok) {
+        const errText = await assistResponse.text();
+        throw new Error("Qwen error: " + assistResponse.status + " " + errText);
+      }
 
-    const feedback = parseTag(full, "FEEDBACK") || full.trim();
-    const focus = parseTag(full, "FOCUS") || "none specified"
+      const assistData = await assistResponse.json();
+
+      // Extract only the assistant's response (not the full chat transcript)
+      let full = assistData.generated_text || assistData.assistant || JSON.stringify(assistData);
+      
+      // The generated_text includes the full chat. Extract only the assistant's final reply.
+      // Format is typically: "system\n...\nuser\n...\nassistant\n<FEEDBACK>...</FEEDBACK>\n<FOCUS>...</FOCUS>"
+      const assistantMatch = full.match(/assistant\s*\n([\s\S]*?)$/i);
+      if (assistantMatch && assistantMatch[1]) {
+        full = assistantMatch[1].trim();
+      }
+
+  const feedback = parseTag(full, "FEEDBACK") || full.trim();
+  const focus = parseTag(full, "FOCUS") || "none specified"
 
     const fullFeedback = `${feedback}\n\nWe suggest you focus on: ${focus}`;
 
@@ -268,7 +263,8 @@ async function dailyPrompt(req, res) {
     });
 
   } catch (err) {
-    console.error("DAILY ERROR:", err);
+    console.error("[dailyPrompt] ERROR:", err.message || err);
+    if (err.stack) console.error("[dailyPrompt] Stack:", err.stack);
     res.status(500).json({ ok: false, error: "Failed to generate daily output." });
   } finally {
     conn.release();
