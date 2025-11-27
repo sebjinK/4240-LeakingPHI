@@ -67,33 +67,162 @@
 <% } %>
 
 <% if (entries.length) { %>
+<style>
+  .stack-wrapper { position: relative; min-height: 280px; overflow: hidden; }
+  .stack-card {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: translateY(30px) scale(0.96);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    pointer-events: none;
+  }
+  .stack-card.active { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; z-index: 3; }
+  .stack-card.next { opacity: 0.6; transform: translateY(12px) scale(0.99); z-index: 2; }
+  .stack-card.prev { opacity: 0.3; transform: translateY(-12px) scale(0.97); z-index: 1; }
+  .stack-card.moving { transition: none !important; }
+</style>
+
 <div class="modal fade" id="checkinModal" tabindex="-1" aria-labelledby="checkinModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content">
-      <form action="/entries/check-in" method="POST">
+      <form id="checkinForm" action="/entries/check-in" method="POST">
         <div class="modal-header">
-          <h5 class="modal-title" id="checkinModalLabel">Check-in</h5>
+          <h5 class="modal-title" id="checkinModalLabel">Daily Check-In</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p>How are you feeling today?</p>
-          <div class="mb-3">
-            <label for="checkin-mood" class="form-label">Mood (1-10)</label>
-            <input type="number" class="form-control" id="checkin-mood" name="mood" min="1" max="10" required>
-          </div>
-          <div class="mb-3">
-            <label for="checkin-notes" class="form-label">Notes (optional)</label>
-            <textarea class="form-control" id="checkin-notes" name="notes" rows="3"></textarea>
+          <div class="stack-wrapper">
+            <div class="stack-container">
+              <% let idx = 0; %>
+              <% if (Array.isArray(suggestions) && suggestions.length) { %>
+                <input type="hidden" name="suggestionFeedback" id="checkinSuggestionFeedback">
+                <div class="card border-0 shadow-sm stack-card" data-stack-card data-card-index="<%= idx++ %>" data-suggestion-card>
+                  <div class="card-body">
+                    <p class="text-uppercase text-secondary small mb-1">Latest AI suggestion</p>
+                    <p class="fw-semibold mb-3"><%= suggestions[0].suggestion || suggestions[0] %></p>
+                    <input type="hidden" class="suggestion-id" value="<%= suggestions[0].id || 0 %>">
+                    <input type="hidden" class="suggestion-text" value="<%= suggestions[0].suggestion || suggestions[0] %>">
+                    <div class="d-flex align-items-center">
+                      <label class="form-label me-3 mb-0" for="checkin-rating-0">Your rating (1-10)</label>
+                      <input
+                        type="range"
+                        class="form-range flex-grow-1 suggestion-rating"
+                        min="1"
+                        max="10"
+                        value="<%= suggestions[0].rating || 5 %>"
+                        id="checkin-rating-0"
+                      />
+                      <span class="ms-2 text-muted small" data-rating-label>5/10</span>
+                    </div>
+                  </div>
+                </div>
+              <% } %>
+
+              <div class="card shadow-sm border-0 stack-card" data-stack-card data-card-index="<%= idx++ %>">
+                <div class="card-body">
+                  <h6 class="text-uppercase text-secondary mb-3">Mood (1-10)</h6>
+                  <input type="number" class="form-control" id="checkin-mood" name="mood" min="1" max="10" required>
+                </div>
+              </div>
+
+              <div class="card shadow-sm border-0 stack-card" data-stack-card data-card-index="<%= idx++ %>">
+                <div class="card-body">
+                  <h6 class="text-uppercase text-secondary mb-3">Notes (optional)</h6>
+                  <textarea class="form-control" id="checkin-notes" name="notes" rows="3"></textarea>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Skip</button>
-          <button type="submit" class="btn btn-primary">Submit</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary" id="checkinPrev">Back</button>
+            <button type="button" class="btn btn-primary" id="checkinNext">Save & Next</button>
+            <button type="submit" class="btn btn-success" id="checkinSubmit">Submit</button>
+          </div>
         </div>
       </form>
     </div>
   </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const cards = Array.from(document.querySelectorAll('#checkinModal [data-stack-card]')).sort((a,b)=>Number(a.dataset.cardIndex||0)-Number(b.dataset.cardIndex||0));
+    let current = 0;
+    let hammer;
+    const nextBtn = document.getElementById('checkinNext');
+    const prevBtn = document.getElementById('checkinPrev');
+    const form = document.getElementById('checkinForm');
+    const payloadInput = document.getElementById('checkinSuggestionFeedback');
+
+    function goNext() { if (current < cards.length - 1) { current++; updateCards(); } }
+    function goPrev() { if (current > 0) { current--; updateCards(); } }
+
+    function updateCards() {
+      cards.forEach((card, idx) => {
+        card.classList.remove('active','next','prev');
+        if (idx === current) card.classList.add('active');
+        else if (idx === current + 1) card.classList.add('next');
+        else if (idx === current - 1) card.classList.add('prev');
+      });
+      if (prevBtn) prevBtn.disabled = current === 0;
+      if (nextBtn) nextBtn.disabled = current === cards.length - 1;
+      attachHammer();
+    }
+
+    function attachHammer() {
+      if (hammer) { hammer.destroy(); hammer = null; }
+      const active = cards[current];
+      if (!active) return;
+      hammer = new Hammer(active);
+      hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
+      hammer.on('pan', ev => {
+        active.classList.add('moving');
+        const rotate = ev.deltaX / 20;
+        active.style.transform = `translate(${ev.deltaX}px, ${ev.deltaY}px) rotate(${rotate}deg)`;
+      });
+      hammer.on('panend', ev => {
+        active.classList.remove('moving');
+        active.style.transform = '';
+        if (Math.abs(ev.deltaX) > 80) {
+          if (ev.deltaX < 0) goNext(); else goPrev();
+        } else {
+          updateCards();
+        }
+      });
+    }
+
+    if (nextBtn) nextBtn.addEventListener('click', goNext);
+    if (prevBtn) prevBtn.addEventListener('click', goPrev);
+
+    const suggestionCard = document.querySelector('#checkinModal [data-suggestion-card]');
+    if (suggestionCard && payloadInput) {
+      const range = suggestionCard.querySelector('.suggestion-rating');
+      const label = suggestionCard.querySelector('[data-rating-label]');
+      const updateLabel = () => { if (label && range) label.textContent = `${range.value}/10`; };
+      if (range) {
+        updateLabel();
+        range.addEventListener('input', updateLabel);
+      }
+      form?.addEventListener('submit', () => {
+        const id = suggestionCard.querySelector('.suggestion-id')?.value || '';
+        const text = suggestionCard.querySelector('.suggestion-text')?.value || '';
+        const rating = range ? range.value : '';
+        payloadInput.value = JSON.stringify([{ id, suggestion: text, rating }]);
+      });
+    }
+
+    // show the first card when modal opens
+    const modalEl = document.getElementById('checkinModal');
+    if (modalEl) {
+      modalEl.addEventListener('shown.bs.modal', updateCards);
+    }
+  });
+</script>
 <% } %>
 
 <% if (Array.isArray(suggestions) && suggestions.length) { %>
