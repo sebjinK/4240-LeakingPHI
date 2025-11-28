@@ -37,7 +37,7 @@ services:
       - "5005:5005"
     environment:
       # model is built into the image during docker build
-      MODEL_PATH: /app/models/qwen2.5-0.5b-instruct
+      HF_MODEL_ID: Qwen/Qwen2.5-0.5B-Instruct
       HF_TOKEN: ${HF_TOKEN}
     networks:
       - healthnet

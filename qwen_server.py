@@ -6,12 +6,13 @@ from pydantic import BaseModel
 from typing import List
 import torch
 
-model_name = os.environ.get("MODEL_PATH") or os.environ.get("HF_MODEL_ID") or "Qwen/Qwen2.5-0.5B-Instruct"
-print(f"[qwen_server] Loading model from: {model_name}")
+HF_TOKEN = os.getenv('HF_TOKEN')  # Get the HF_TOKEN from environment variables
+HF_MODEL_ID = os.environ.get("HF_MODEL_ID", "Qwen/Qwen2.5-0.5B-Instruct")
+print(f"[qwen_server] Loading model from: {HF_MODEL_ID}")
 # If MODEL_PATH points to a local folder (e.g. /app/models/qwen2.5-0.5b-instruct), AutoTokenizer
 # and AutoModelForCausalLM will load from that path. Otherwise, it will attempt to download from HF.
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(HF_MODEL_ID, token=HF_TOKEN)
+model = AutoModelForCausalLM.from_pretrained(HF_MODEL_ID, token=HF_TOKEN)
 
 app = FastAPI()
 
