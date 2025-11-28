@@ -5,7 +5,7 @@ const { chatCompletion } = require('../helpers/hfChat');
 const { InferenceClient } = require("@huggingface/inference");
 
 const client = new InferenceClient(process.env.HF_TOKEN);
-const MODEL_ID = process.env.HF_MODEL_ID || "Qwen/Qwen2.5-1.5B-Instruct:featherless-ai";
+const MODEL_ID = process.env.HF_MODEL_ID || "Qwen/Qwen2.5-0.5B-Instruct:featherless-ai";
 
 
 const safeString = (value) => {

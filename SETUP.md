@@ -63,7 +63,7 @@ You can also run non-interactively:
 
 ```bash
 ./scripts/download_and_configure.sh --hf-token <your-token> \
-  --model-id Qwen/Qwen2.5-1.5B-Instruct --dest ./models/qwen2.5-1.5b
+  --model-id Qwen/Qwen2.5-0.5B-Instruct --dest ./models/qwen2.5-1.5b
 ```
 
 Notes:

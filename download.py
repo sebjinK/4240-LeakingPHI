@@ -7,7 +7,7 @@ import os
 load_dotenv()
 HF_TOKEN = os.getenv('HF_TOKEN')  # Get the HF_TOKEN from environment variables
 
-model_id = "Qwen/Qwen2.5-1.5B-Instruct"
+model_id = "Qwen/Qwen2.5-0.5B-Instruct"
 
 # If you want authentication:
 tokenizer = AutoTokenizer.from_pretrained(model_id, token=HF_TOKEN)
