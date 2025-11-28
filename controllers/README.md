@@ -1,6 +1,6 @@
 # Controllers Directory
 
-This folder contains all controller logic for the AI Health Habit Tracker.  
+This folder contains all controller logic for the Fitness Buddy.  
 Controllers handle database queries, validation, and sending data to the EJS views.
 
 ## Files

@@ -5,14 +5,14 @@ const pool = require('../config');
 const bcrypt = require('bcrypt');
 
 // ====== RENDER PAGES ======
-exports.showLogin = (req, res) => {
+function showLogin(req, res) {
   res.render('login', {
     errors: [],
     old: {}
   });
 };
 
-exports.showRegister = (req, res) => {
+function showRegister(req, res) {
   res.render('register', {
     errors: [],
     old: {}
@@ -20,7 +20,7 @@ exports.showRegister = (req, res) => {
 };
 
 // ====== REGISTER USER ======
-exports.registerUser = async (req, res) => {
+async function registerUser(req, res) {
   const { name, email, password, confirmPassword } = req.body;
 
   const normalizedEmail = (email || '').trim().toLowerCase();
@@ -51,8 +51,9 @@ exports.registerUser = async (req, res) => {
     });
   }
 
+  const conn = await pool.getConnection();
+
   try {
-    const conn = await pool.getConnection();
 
     // Check existing email
     const existing = await conn.query(
@@ -61,7 +62,6 @@ exports.registerUser = async (req, res) => {
     );
 
     if (existing.length > 0) {
-      conn.release();
       return res.status(400).render('register', {
         errors: [{ msg: 'Email already in use' }],
         old: { name, email: normalizedEmail }
@@ -75,22 +75,22 @@ exports.registerUser = async (req, res) => {
       [name.trim(), normalizedEmail, hash]
     );
 
-    conn.release();
-
-    // Log user in, then go to baseline
+    // Log user in, then go to dashboard
     req.session.userId = Number(result.insertId);
     req.session.save(() => {
-      res.redirect('/baseline');
+      res.redirect('/dashboard');
     });
-    
+
   } catch (err) {
     console.error('registerUser error:', err);
     res.status(500).send('Registration failed');
+  } finally {
+    conn.release();
   }
 };
 
 // ====== LOGIN USER ======
-exports.loginUser = async (req, res) => {
+async function loginUser(req, res) {
   const { email, password } = req.body;
   const normalizedEmail = (email || '').trim().toLowerCase();
 
@@ -101,15 +101,14 @@ exports.loginUser = async (req, res) => {
     });
   }
 
+  const conn = await pool.getConnection();
   try {
-    const conn = await pool.getConnection();
+
 
     const rows = await conn.query(
       'SELECT * FROM users WHERE email = ?',
       [normalizedEmail]
     );
-
-    conn.release();
 
     if (rows.length === 0) {
       return res.status(400).render('login', {
@@ -129,16 +128,29 @@ exports.loginUser = async (req, res) => {
     }
 
     req.session.userId = user.id;
-    res.redirect('/dashboard');
+    return res.redirect('/dashboard');
+
   } catch (err) {
     console.error('loginUser error:', err);
     res.status(500).send('Login failed');
+  } finally {
+    conn.release();
   }
 };
 
 // ====== LOGOUT ======
-exports.logoutUser = (req, res) => {
+function logoutUser(req, res) {
   req.session.destroy(() => {
     res.redirect('/login');
   });
+};
+
+
+// ====== EXPORT ALL ======
+module.exports = {
+  showLogin,
+  showRegister,
+  registerUser,
+  loginUser,
+  logoutUser
 };

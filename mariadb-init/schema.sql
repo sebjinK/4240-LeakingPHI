@@ -10,23 +10,41 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS baseline (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    goal_sleep DECIMAL(4,1),
-    goal_water INT,
-    goal_exercise_minutes INT,
-    goal_mood INT,
-    difficulty_preference INT,
+    user_id INT NOT NULL UNIQUE,
+    age_years INT,
+    gender VARCHAR (36),
+    height VARCHAR (36),
+    user_weight VARCHAR (36),
+    medical_condition VARCHAR (255),
+    activity_level VARCHAR (36),
+    dietary_preferences VARCHAR (255),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS entries (
+CREATE TABLE IF NOT EXISTS preferences (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    date DATE NOT NULL,
-    sleep_hours DECIMAL(4,1),
-    water_cups INT,
-    exercise_minutes INT,
-    mood INT,
-    notes TEXT,
+    user_id INT NOT NULL UNIQUE ,
+    intensity INT,
+    exercise_enjoyment VARCHAR (255),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS goals (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    primary_goal VARCHAR (255),
+    short_goal VARCHAR (255),
+    long_goal VARCHAR (255),
+    days_goal INT,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS suggestions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    suggestion VARCHAR (4500),
+    rating VARCHAR (10),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+

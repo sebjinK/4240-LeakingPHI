@@ -2,14 +2,14 @@
 // routes for authentication
 const express = require('express');
 const router = express.Router();
-const { showLogin, showRegister, registerUser, loginUser, logoutUser } = require('../controllers/authController');
+const authController = require('../controllers/authController');
 
-router.get('/login', showLogin);
-router.post('/login', loginUser);
+router.get('/login', authController.showLogin);
+router.post('/login', authController.loginUser);
 
-router.get('/register', showRegister);
-router.post('/register', registerUser);
+router.get('/register', authController.showRegister);
+router.post('/register', authController.registerUser);
 
-router.get('/logout', logoutUser);
+router.get('/logout', authController.logoutUser);
 
 module.exports = router;

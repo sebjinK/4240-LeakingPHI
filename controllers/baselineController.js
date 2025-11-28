@@ -1,111 +1,181 @@
 // controllers/baselineController.js
 const pool = require('../config');
+const buildPartialUpdate = require('../helpers/buildPartialUpdate');
 
-// Show the baseline form (pre-filled if it exists)
-exports.showBaseline = async (req, res) => {
+async function getBaseline(req, res) {
+  if (!req.session.userId) {
+    return res.status(401).json({ ok: false, message: 'Not logged in.' })
+  }
+
+  const userId = req.session.userId;
+
+  const conn = await pool.getConnection();
+
   try {
-    const conn = await pool.getConnection();
 
-    // Get user for header
-    const users = await conn.query(
-      'SELECT id, name, email FROM users WHERE id = ?',
-      [req.session.userId]
-    );
-    if (!users.length) {
-      conn.release();
-      return res.redirect('/login');
-    }
-    const user = users[0];
+    const baselineRows = await conn.query("SELECT CAST(age_years AS CHAR) AS age_years, gender, height, user_weight, medical_condition, activity_level, dietary_preferences FROM baseline WHERE user_id = ?", [userId]);
+    const preferencesRows = await conn.query("SELECT CAST(intensity AS CHAR) AS intensity, exercise_enjoyment FROM preferences WHERE user_id = ?", [userId]);
+    const goalsRows = await conn.query("SELECT primary_goal, short_goal, long_goal, CAST(days_goal AS CHAR) AS days_goal FROM goals WHERE user_id = ?", [userId]);
 
-    // Get baseline, alias columns to match EJS
-    const rows = await conn.query(
-      `SELECT
-         goal_sleep            AS goalSleep,
-         goal_water            AS goalWater,
-         goal_exercise_minutes AS goalExerciseMinutes,
-         goal_mood             AS goalMood,
-         difficulty_preference AS difficultyPreference
-       FROM baseline
-       WHERE user_id = ?`,
-      [req.session.userId]
-    );
 
-    conn.release();
+    const baseline = baselineRows[0] || null;
+    const preferences = preferencesRows[0] || null;
+    const goals = goalsRows[0] || null;
 
-    const baseline = rows.length ? rows[0] : {};
-
-    res.render('baseline', {
-      user,
-      errors: [],
-      old: baseline
+    return res.json({
+      ok: true,
+      baseline,
+      preferences,
+      goals
     });
+
   } catch (err) {
-    console.error('showBaseline error:', err);
-    res.status(500).send('Could not load baseline');
+    console.error('getBaseline error: ', err);
+    res.status(500).json({ ok: false, message: 'Could not retrieve baseline data.' });
+  } finally {
+    conn.release();
   }
 };
 
-// Handle baseline form submission (insert/update)
-exports.submitBaseline = async (req, res) => {
-  const {
-    goalSleep,
-    goalWater,
-    goalExerciseMinutes,
-    goalMood,
-    difficultyPreference
-  } = req.body;
+async function upsertBaseline(req, res) {
+  if (!req.session.userId) {
+    return res.status(401).json({ ok: false, message: 'Not logged in.' });
+  }
+
+  const userId = req.session.userId;
+  const conn = await pool.getConnection();
 
   try {
-    const conn = await pool.getConnection();
-
-    const existing = await conn.query(
+    // Check if baseline exists
+    const rows = await conn.query(
       'SELECT id FROM baseline WHERE user_id = ?',
-      [req.session.userId]
+      [userId]
     );
 
-    if (existing.length) {
-      // Update existing baseline row
-      await conn.query(
-        `UPDATE baseline
-         SET
-           goal_sleep            = ?,
-           goal_water            = ?,
-           goal_exercise_minutes = ?,
-           goal_mood             = ?,
-           difficulty_preference = ?
-         WHERE user_id = ?`,
-        [
-          goalSleep,
-          goalWater,
-          goalExerciseMinutes,
-          goalMood,
-          difficultyPreference,
-          req.session.userId
-        ]
+    const exists = rows.length > 0;
+
+    const normalize = v => (v === "" || v === undefined ? null : v);
+    let {
+      age_years,
+      gender,
+      height,
+      user_weight,
+      medical_condition,
+      activity_level,
+      dietary_preferences,
+      primary_goal,
+      short_goal,
+      long_goal,
+      days_goal,
+      intensity,
+      exercise_enjoyment
+    } = req.body;
+
+    // Normalize values
+    age_years = normalize(age_years);
+    gender = normalize(gender);
+    height = normalize(height);
+    user_weight = normalize(user_weight);
+    medical_condition = normalize(medical_condition);
+    activity_level = normalize(activity_level);
+    dietary_preferences = normalize(dietary_preferences);
+    primary_goal = normalize(primary_goal);
+    short_goal = normalize(short_goal);
+    long_goal = normalize(long_goal);
+    days_goal = normalize(days_goal);
+    intensity = normalize(intensity);
+    exercise_enjoyment = normalize(exercise_enjoyment);
+
+    if (!exists) {
+      // INSERT all 3 tables
+      await conn.query(`
+        INSERT INTO baseline(user_id, age_years, gender, height, user_weight, medical_condition, activity_level, dietary_preferences)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [userId, age_years, gender, height, user_weight, medical_condition, activity_level, dietary_preferences]
       );
-    } else {
-      // Insert new baseline row
-      await conn.query(
-        `INSERT INTO baseline
-           (user_id, goal_sleep, goal_water, goal_exercise_minutes, goal_mood, difficulty_preference)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          req.session.userId,
-          goalSleep,
-          goalWater,
-          goalExerciseMinutes,
-          goalMood,
-          difficultyPreference
-        ]
+
+      await conn.query(`
+        INSERT INTO goals(user_id, primary_goal, short_goal, long_goal, days_goal)
+        VALUES (?, ?, ?, ?, ?)`,
+        [userId, primary_goal, short_goal, long_goal, days_goal]
       );
+
+      await conn.query(`
+        INSERT INTO preferences(user_id, intensity, exercise_enjoyment)
+        VALUES (?, ?, ?)`,
+        [userId, intensity, exercise_enjoyment]
+      );
+
+      return res.json({ ok: true, message: "Baseline created successfully." });
     }
 
-    conn.release();
+    // 🛠 If exists → update using your existing update logic
+    const baselineQuery = buildPartialUpdate('baseline', userId, {
+      age_years,
+      gender,
+      height,
+      user_weight,
+      medical_condition,
+      activity_level,
+      dietary_preferences
+    });
 
-    // After saving baseline, go to dashboard
-    res.redirect('/dashboard');
+    const goalsQuery = buildPartialUpdate('goals', userId, {
+      primary_goal,
+      short_goal,
+      long_goal,
+      days_goal
+    });
+
+    const preferencesQuery = buildPartialUpdate('preferences', userId, {
+      intensity,
+      exercise_enjoyment
+    });
+
+    if (baselineQuery) await conn.query(baselineQuery.sql, baselineQuery.values);
+    if (goalsQuery) await conn.query(goalsQuery.sql, goalsQuery.values);
+    if (preferencesQuery) await conn.query(preferencesQuery.sql, preferencesQuery.values);
+
+    return res.json({ ok: true, message: "Baseline updated successfully." });
+
   } catch (err) {
-    console.error('submitBaseline error:', err);
-    res.status(500).send('Could not save baseline');
+    console.error('upsertBaseline error:', err);
+    res.status(500).json({ ok: false, message: 'Database error.' });
+  } finally {
+    conn.release();
   }
+}
+
+
+async function checkBaseline(req, res) {
+  if (!req.session.userId) {
+    return res.status(401).json({ ok: false, message: 'Not logged in.' })
+  }
+
+  const userId = req.session.userId;
+  const conn = await pool.getConnection();
+
+  try {
+
+
+    const rows = await conn.query('SELECT COUNT(*) AS count FROM baseline WHERE user_id = ?', [userId]);
+
+    const hasBaseline = rows[0].count > 0 ? true : false;
+
+    return res.json({ ok: true, hasBaseline });
+
+  } catch (err) {
+    console.error('checkBaseline error: ', err);
+    res.status(500).json({ ok: false, message: 'Could not check baseline data.' });
+  } finally {
+    conn.release();
+  }
+};
+
+module.exports = {
+  getBaseline,
+  //createBaseline,
+  //updateBaseline,
+  upsertBaseline,
+  checkBaseline
 };
