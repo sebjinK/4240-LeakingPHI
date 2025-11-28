@@ -72,12 +72,20 @@ async def generate(request: Request):
             outputs = model.generate(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
-                max_new_tokens=200
+                max_new_tokens=256,
+                temperature=0.3,
+                top_p=0.9,
+                do_sample=True,    # or False if you want max consistency
+                repetition_penalty=1.05,
             )
         else:
             outputs = model.generate(
                 input_ids=input_ids,
-                max_new_tokens=200
+                max_new_tokens=256,
+                temperature=0.3,
+                top_p=0.9,
+                do_sample=True,    # or False if you want max consistency
+                repetition_penalty=1.05,
             )
     except Exception as e:
         print("[qwen_server] model.generate failed:", repr(e))
