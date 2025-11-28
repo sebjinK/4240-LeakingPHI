@@ -1,5 +1,5 @@
 # ./docker-compose.yml 
-version: "3.9"
+# version: "3.9"
 
 services:
   app:
@@ -29,15 +29,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.qwen
+      args:
+        HF_TOKEN: ${HF_TOKEN}
     container_name: health_qwen
     restart: always
     ports:
       - "5005:5005"
-    # mount local models directory into container so the model files don't need to be copied into image
-    volumes:
-      - ./models:/app/models:ro
     environment:
-      # point MODEL_PATH to the mounted model directory
+      # model is built into the image during docker build
       MODEL_PATH: /app/models/qwen2.5-0.5b-instruct
     networks:
       - healthnet

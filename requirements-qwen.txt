@@ -5,3 +5,4 @@ torch
 safetensors
 sentencepiece
 pydantic
+python-dotenv
