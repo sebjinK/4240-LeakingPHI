@@ -13,13 +13,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # copy server code
-COPY qwen_server.py /app/qwen_server.py
 COPY requirements-qwen.txt /app/requirements-qwen.txt
 COPY download.py /app/download.py 
 
 # Install python deps
 RUN pip install --no-cache-dir -r /app/requirements-qwen.txt
 RUN python3 /app/download.py
+
+COPY qwen_server.py /app/qwen_server.py
 
 EXPOSE 5005
 

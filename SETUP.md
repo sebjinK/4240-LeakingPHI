@@ -2,10 +2,6 @@
 
 ## Prerequisites
 - Linux or WSL viable enviornment
-- Node.js 18+ (`node --version`)
-- Python 3.8+ (for the local Qwen model server)
-- Docker & Docker Compose (for containerized setup)
-- MariaDB running locally or in Docker
 
 ## Running Tests
 

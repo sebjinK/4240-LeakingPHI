@@ -98,20 +98,18 @@ async def generate(request: Request):
             pass
         raise
 
-    # ensure outputs is indexable; handle a few possible return formats
-    if hasattr(outputs, '__len__') and len(outputs) > 0:
-        seq = outputs[0]
+    # ensure outputs is a tensor batch: [batch, seq_len]
+    if isinstance(outputs, torch.Tensor):
+        generated_ids = outputs[:, input_ids.shape[-1]:]  # cut off the prompt part
     else:
-        seq = outputs
+        # fall back in weird cases
+        generated_ids = outputs[0][input_ids.shape[-1]:]
 
-    # if seq is a tensor, convert to list for tokenizer.decode
-    if hasattr(seq, 'tolist'):
-        seq_list = seq.tolist()
-    else:
-        seq_list = seq
+    # Decode ONLY the generated continuation
+    text = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
-    text = tokenizer.decode(seq_list, skip_special_tokens=True)
     return {"generated_text": text}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5005)

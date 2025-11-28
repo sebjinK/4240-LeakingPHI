@@ -6,7 +6,7 @@ const { InferenceClient } = require("@huggingface/inference");
 
 const client = new InferenceClient(process.env.HF_TOKEN);
 const MODEL_ID = process.env.HF_MODEL_ID || "Qwen/Qwen2.5-0.5B-Instruct:featherless-ai";
-
+const TEST_ENABLE = process.env.TEST_ENABLE === 'true';
 
 const safeString = (value) => {
   if (value === undefined || value === null) return "not provided";
@@ -225,6 +225,11 @@ async function dailyPrompt(req, res) {
 
       // Qwen local /generate expects a JSON array of messages (not an object with `messages`)
       const assistUrl = process.env.ASSIST_API_URL || 'http://localhost:5005/generate';
+      let tStartQwen, tEndQwen;
+
+      if (TEST_ENABLE) {
+        tStartQwen = performance.now();
+      }
       const assistResponse = await fetch(assistUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -233,7 +238,17 @@ async function dailyPrompt(req, res) {
           { role: 'user', content: userPrompt }
         ]),
       });
-
+      if (TEST_ENABLE) {
+      // includes network + Qwen inference + response serialization on Qwen side
+      tEndQwen = performance.now();
+      console.log(
+        JSON.stringify({
+          type: "qwen_generate_timing",
+          userId,
+          elapsed_ms: +(tEndQwen - tStartQwen).toFixed(1),
+        })
+      );
+    }
 
       if (!assistResponse.ok) {
         const errText = await assistResponse.text();
@@ -242,20 +257,26 @@ async function dailyPrompt(req, res) {
 
       const assistData = await assistResponse.json();
 
-      // Extract only the assistant's response (not the full chat transcript)
+      // Now this should be just the model's reply text,
+      // e.g. "<FEEDBACK>...</FEEDBACK>\n<FOCUS>exercise</FOCUS>"
       let full = assistData.generated_text || assistData.assistant || JSON.stringify(assistData);
-      
-      // The generated_text includes the full chat. Extract only the assistant's final reply.
-      // Format is typically: "system\n...\nuser\n...\nassistant\n<FEEDBACK>...</FEEDBACK>\n<FOCUS>...</FOCUS>"
-      const assistantMatch = full.match(/assistant\s*\n([\s\S]*?)$/i);
-      if (assistantMatch && assistantMatch[1]) {
-        full = assistantMatch[1].trim();
-      }
 
-  const feedback = parseTag(full, "FEEDBACK") || full.trim();
-  const focus = parseTag(full, "FOCUS") || "none specified"
+      console.log("[dailyPrompt] Full model response:", full);
 
-    const fullFeedback = `${feedback}\n\nWe suggest you focus on: ${focus}`;
+      const feedback = parseTag(full, "FEEDBACK");
+      const focus = parseTag(full, "FOCUS");
+
+      // Safer fallbacks: don't echo the entire raw response if tags are missing
+      const safeFeedback =
+        feedback ||
+        "I'm having trouble formatting my reply right now, but keep focusing on small, sustainable improvements today.";
+      const safeFocus =
+        focus && ["sleep", "hydration", "exercise", "mood", "nutrition"].includes(focus.toLowerCase())
+          ? focus
+          : "exercise";
+
+      const fullFeedback = `${safeFeedback}\n\nWe suggest you focus on: ${safeFocus}`;
+
 
     return res.json({
       ok: true,

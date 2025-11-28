@@ -17,6 +17,7 @@ services:
       SESSION_SECRET: ${SESSION_SECRET}
       HF_TOKEN: ${HF_TOKEN}
       DEBUG_ENABLE: 'true'
+      TEST_ENABLE: 'true'
       # When running under docker-compose, use the internal qwen service
       ASSIST_API_URL: http://qwen:5005/generate
     depends_on:
