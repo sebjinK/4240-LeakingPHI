@@ -1,0 +1,68 @@
+# ./docker-compose.yml 
+# version: "3.9"
+
+services:
+  app:
+    build: . #this is the root dir, this path is where server.js needs to be. 
+    container_name: health_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      SESSION_SECRET: ${SESSION_SECRET}
+      HF_TOKEN: ${HF_TOKEN}
+      DEBUG_ENABLE: 'true'
+      TEST_ENABLE: 'true'
+      # When running under docker-compose, use the internal qwen service
+      ASSIST_API_URL: http://qwen:5005/generate
+    depends_on:
+      - mariadb
+      - qwen
+    networks:
+      - healthnet
+
+  qwen:
+    build:
+      context: .
+      dockerfile: Dockerfile.qwen
+      args:
+        HF_TOKEN: ${HF_TOKEN}
+    container_name: health_qwen
+    restart: always
+    ports:
+      - "5005:5005"
+    environment:
+      # model is built into the image during docker build
+      HF_MODEL_ID: Qwen/Qwen2.5-0.5B-Instruct
+      HF_TOKEN: ${HF_TOKEN}
+    networks:
+      - healthnet
+
+  mariadb:
+    image: mariadb:11
+    container_name: health_mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./mariadb-init:/docker-entrypoint-initdb.d
+    networks:
+      - healthnet
+
+networks:
+  healthnet:
+
+
+volumes:
+  mariadb_data:

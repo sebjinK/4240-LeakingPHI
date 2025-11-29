@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fitness Buddy</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+  <header>
+    <nav class="nav-bar">
+      <a href="/" class="site-title">Fitness Buddy</a>
+      <% if (typeof user !=='undefined' ) { %>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/logout">Logout</a>
+        <% } %>
+    </nav>
+  </header>

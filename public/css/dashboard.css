@@ -1,0 +1,261 @@
+/* public/css/dashboard.css */
+
+/* -------- GENERAL -------- */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #121212;
+  color: #E0E0E0;
+}
+
+a {
+  color: #BB86FC;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0.5em 0;
+}
+
+/* -------- HEADER -------- */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1em 2em;
+  background-color: #1F1B24;
+  border-bottom: 1px solid #333;
+}
+
+header h1 a {
+  font-size: 1.8em;
+  color: #BB86FC;
+}
+
+header nav a {
+  padding: 0.5em 1em;
+  border-radius: 5px;
+  background-color: #2C2A33;
+}
+
+header nav a:hover {
+  background-color: #3A3842;
+}
+
+/* -------- DASHBOARD LAYOUT -------- */
+.dashboard-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 2em;
+  gap: 2em;
+}
+
+.baseline-section {
+  flex: 1 1 30%;
+  background-color: #1E1C24;
+  padding: 1em;
+  border-radius: 10px;
+  min-width: 280px;
+}
+
+.baseline-section button {
+  margin-bottom: 1em;
+  padding: 0.5em 1em;
+  border: none;
+  background-color: #BB86FC;
+  color: #121212;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.baseline-section button:hover {
+  background-color: #9A5EDB;
+}
+
+.daily-section {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.daily-section button {
+  padding: 1em 2em;
+  font-size: 1.1em;
+  border: none;
+  background-color: #03DAC5;
+  color: #121212;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.daily-section button:hover {
+  background-color: #00B3A5;
+}
+
+.suggestion-box {
+  width: 100%;
+  margin-top: 2em;
+  padding: 1em;
+  background-color: #1E1C24;
+  border-radius: 10px;
+}
+
+/* -------- MODALS -------- */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.75);
+}
+
+.modal-content {
+  background-color: #1F1B24;
+  margin: 5% auto;
+  padding: 2em;
+  border: 1px solid #888;
+  width: 90%;
+  max-width: 700px;
+  border-radius: 10px;
+  color: #E0E0E0;
+  position: relative;
+}
+
+.close {
+  color: #E0E0E0;
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-size: 1.5em;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: #BB86FC;
+}
+
+/* -------- FORMS -------- */
+form label {
+  display: block;
+  margin-top: 1em;
+  margin-bottom: 0.2em;
+}
+
+form input[type="text"],
+form input[type="number"],
+form select {
+  width: 100%;
+  padding: 0.5em;
+  border-radius: 5px;
+  border: 1px solid #333;
+  background-color: #2C2A33;
+  color: #E0E0E0;
+}
+
+form input::placeholder {
+  color: #888;
+}
+
+form button {
+  margin-top: 1.5em;
+  padding: 0.7em 1.5em;
+  background-color: #BB86FC;
+  border: none;
+  border-radius: 5px;
+  color: #121212;
+  cursor: pointer;
+}
+
+form button:hover {
+  background-color: #9A5EDB;
+}
+
+/* -------- HEIGHT & WEIGHT INPUTS -------- */
+.height-inputs,
+.weight-inputs {
+  display: flex;
+  gap: 0.5em;
+  align-items: center;
+}
+
+.height-inputs input,
+.weight-inputs input {
+  flex: 1;
+}
+
+/* -------- DAILY NAVIGATION -------- */
+.daily-navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.daily-navigation button {
+  min-width: 100px;
+}
+
+#dailyBackBtn {
+  background-color: #BB86FC;
+  color: #121212;
+}
+
+#dailyNextBtn {
+  background-color: #03DAC5;
+  color: #121212;
+}
+
+#dailyFinalizeBtn {
+  background-color: #FF0266;
+  color: #121212;
+}
+
+.daily-navigation button:hover {
+  opacity: 0.85;
+}
+
+/* -------- DASHBOARD FLEX LAYOUT -------- */
+.dashboard-container {
+  display: flex;
+  align-items: flex-start;
+  /* align baseline and sidebar at top */
+  gap: 2em;
+  /* spacing between baseline and sidebar */
+}
+
+/* Sidebar container for button + suggestion box */
+#dashboardSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  /* space between button and suggestion box */
+  position: sticky;
+  top: 20px;
+  /* sticks to top when scrolling */
+  align-self: flex-start;
+  /* prevents being stretched by baseline height */
+  min-width: 220px;
+  /* optional: keeps sidebar readable */
+}
+
+/* Optional: suggestion box style tweak */
+#suggestionBox {
+  width: 100%;
+  margin-top: 0;
+  /* remove previous margin */
+  padding: 1em;
+  background-color: #1E1C24;
+  border-radius: 10px;
+}

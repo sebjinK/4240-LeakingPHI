@@ -1,0 +1,143 @@
+/* -------- GENERAL -------- */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #121212;
+    color: #E0E0E0;
+}
+
+a {
+    color: #BB86FC;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+h1,
+h2,
+h3 {
+    margin: 0.5em 0;
+}
+
+/* -------- HEADER -------- */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1em 2em;
+    background-color: #1F1B24;
+    border-bottom: 1px solid #333;
+}
+
+header h1 a {
+    font-size: 1.8em;
+    color: #BB86FC;
+}
+
+header nav a {
+    padding: 0.5em 1em;
+    border-radius: 5px;
+    background-color: #2C2A33;
+}
+
+header nav a:hover {
+    background-color: #3A3842;
+}
+
+/* -------- FORMS -------- */
+form label {
+    display: block;
+    margin-top: 1em;
+    margin-bottom: 0.2em;
+}
+
+form input[type="text"],
+form input[type="number"],
+form select,
+form input[type="email"],
+form input[type="password"] {
+    width: 100%;
+    padding: 0.5em;
+    border-radius: 5px;
+    border: 1px solid #333;
+    background-color: #2C2A33;
+    color: #E0E0E0;
+}
+
+form input::placeholder {
+    color: #888;
+}
+
+form button {
+    margin-top: 1.5em;
+    padding: 0.7em 1.5em;
+    background-color: #BB86FC;
+    border: none;
+    border-radius: 5px;
+    color: #121212;
+    cursor: pointer;
+}
+
+form button:hover {
+    background-color: #9A5EDB;
+}
+
+/* -------- MODALS -------- */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.75);
+}
+
+.modal-content {
+    background-color: #1F1B24;
+    margin: 5% auto;
+    padding: 2em;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 700px;
+    border-radius: 10px;
+    color: #E0E0E0;
+    position: relative;
+}
+
+.close {
+    color: #E0E0E0;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 1.5em;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #BB86FC;
+}
+
+.height-inputs input,
+.weight-inputs input {
+    flex: 3;
+    /* wider than the unit selector */
+    min-width: 100px;
+    /* ensures visibility of typed value */
+    padding: 0.5em;
+    border-radius: 5px;
+    border: 1px solid #333;
+    background-color: #2C2A33;
+    color: #E0E0E0;
+}
+
+/* Slider for intensity */
+input[type="range"] {
+    width: 100%;
+    margin: 1em 0;
+}

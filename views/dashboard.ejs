@@ -1,0 +1,158 @@
+<!-- views/dashboard.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Fitness Buddy Dashboard</title>
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="/js/dashboard.js" defer></script>
+</head>
+
+<body>
+  <header>
+    <h1 id="homeLink"><a href="/">Fitness Buddy</a></h1>
+    <nav>
+      <a href="/logout">Logout</a>
+    </nav>
+  </header>
+
+  <main class="dashboard-container">
+    <!-- --------- BASELINE SECTION --------- -->
+    <!-- views/dashboard.ejs -->
+    <section id="baselineSection" class="baseline-section">
+      <h2>Baseline Information</h2>
+
+      <form id="baselineForm">
+        <!-- Age -->
+        <label>Age (years)</label>
+        <input type="number" name="age_years" min="0" max="120" required>
+
+        <!-- Gender -->
+        <label>Gender</label>
+        <select name="gender" required>
+          <option value="">Select</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <!-- Height -->
+        <label>Height</label>
+        <div class="height-inputs">
+          <input type="number" name="height_ft" placeholder="ft">
+          <input type="number" name="height_in" placeholder="in">
+          <input type="number" name="height_cm" placeholder="cm">
+          <select name="height_unit">
+            <option value="ft/in">ft/in</option>
+            <option value="cm">cm</option>
+          </select>
+        </div>
+
+        <!-- Weight -->
+        <label>Weight</label>
+        <div class="weight-inputs">
+          <input type="number" name="weight_value" placeholder="value" required>
+          <select name="weight_unit">
+            <option value="lbs">lbs</option>
+            <option value="kg">kg</option>
+          </select>
+        </div>
+
+        <!-- Medical Condition -->
+        <label>Medical Conditions / Injuries</label>
+        <input type="text" name="medical_condition" maxlength="255" required>
+
+        <!-- Activity Level -->
+        <label>Activity Level</label>
+        <select name="activity_level" required>
+          <option value="">Select</option>
+          <option value="Sedentary">Sedentary</option>
+          <option value="Lightly Active">Lightly Active</option>
+          <option value="Moderately Active">Moderately Active</option>
+          <option value="Very Active">Very Active</option>
+        </select>
+
+        <!-- Dietary Preferences -->
+        <label>Dietary Restrictions</label>
+        <input type="text" name="dietary_preferences" maxlength="255" required>
+
+        <!-- Goals -->
+        <label>Primary Goal (overall)</label>
+        <input type="text" name="primary_goal" maxlength="255" required>
+
+        <label>Short-Term Goal (1-3 months)</label>
+        <input type="text" name="short_goal" maxlength="255" required>
+
+        <label>Long-Term Goal (6-12 months)</label>
+        <input type="text" name="long_goal" maxlength="255" required>
+
+        <label>Days per Week to Exercise</label>
+        <input type="number" name="days_goal" min="0" max="7" required>
+
+        <!-- Intensity -->
+        <label>Desired Intensity Level (1-10)</label>
+        <input type="range" name="intensity" min="1" max="10" value="5" required>
+        <span id="intensityValue">5</span>
+
+        <!-- Preferred Exercise -->
+        <label>Preferred Exercise Type</label>
+        <select name="exercise_enjoyment" required>
+          <option value="">Select</option>
+          <option value="Cardio">Cardio</option>
+          <option value="Strength">Strength</option>
+          <option value="Flexibility">Flexibility</option>
+          <option value="Mixed">Mixed</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <button type="submit">Save Baseline</button>
+      </form>
+    </section>
+
+
+    <!-- --------- RIGHT-SIDEBAR: CHECK-IN + SUGGESTION --------- -->
+    <div id="dashboardSidebar">
+      <section class="daily-section">
+        <button id="dailyCheckInBtn">Record Daily Check-In</button>
+      </section>
+
+      <section id="suggestionBox" class="suggestion-box">
+        <h2>Most Recent Suggestion</h2>
+        <div id="suggestionContent"></div>
+      </section>
+    </div>
+  </main>
+
+
+  <!-- --------- DAILY CHECK-IN MODAL --------- -->
+  <div id="dailyModal" class="modal">
+    <div class="modal-content">
+      <span id="dailyCloseBtn" class="close">&times;</span>
+      <h2>Daily Check-In</h2>
+
+      <!-- Form for all daily questions -->
+      <form id="dailyForm">
+        <div id="dailyFormContainer"></div>
+        <button type="submit" id="dailySubmitBtn">Submit</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- --------- ASSISTANT RESPONSE MODAL --------- -->
+  <div id="assistantModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span id="assistantCloseBtn" class="close">&times;</span>
+      <h2>Assistant Response</h2>
+      <div id="assistantContent" style="white-space:pre-wrap; margin-bottom:1rem;"></div>
+      <details id="assistantDebug" style="display:none;">
+        <summary>Debug info</summary>
+        <pre id="assistantDebugPre" style="white-space:pre-wrap; max-height:300px; overflow:auto;"></pre>
+      </details>
+    </div>
+  </div>
+
+</body>
+
+</html>

@@ -1,0 +1,27 @@
+FROM python:3.11-slim
+
+ARG HF_TOKEN
+ENV HF_TOKEN=${HF_TOKEN}
+
+WORKDIR /app
+
+# system deps for compiling some Python packages (if needed)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# copy server code
+COPY requirements-qwen.txt /app/requirements-qwen.txt
+COPY download.py /app/download.py 
+
+# Install python deps
+RUN pip install --no-cache-dir -r /app/requirements-qwen.txt
+RUN python3 /app/download.py
+
+COPY qwen_server.py /app/qwen_server.py
+
+EXPOSE 5005
+
+CMD ["python3", "qwen_server.py"]

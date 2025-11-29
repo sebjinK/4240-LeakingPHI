@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+transformers>=4.30
+torch
+safetensors
+sentencepiece
+pydantic
+python-dotenv
