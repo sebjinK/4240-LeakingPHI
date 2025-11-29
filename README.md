@@ -1,5 +1,3 @@
-# We're Leaking Private Healthcare Information with this one!!!!
-
 
 # Fitness Buddy
 *A Conversational Assistant for Personal Wellness Monitoring*
