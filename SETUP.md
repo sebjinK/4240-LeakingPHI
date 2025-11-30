@@ -38,34 +38,12 @@ curl -X POST http://localhost:3001/debug/daily \
 
 ## Download 
 
-### Download model and configure environment
-
-This project ships a small helper script that will download a model snapshot from Hugging Face
-and write the resulting local path into `.env` as `MODEL_PATH`. It can also store your `HF_TOKEN`
-and `HF_MODEL_ID` into `.env` if you provide them.
-
-Make the script executable and run it (interactive):
+### Download and run container
 
 ```bash
-chmod +x scripts/download_and_configure.sh
-./scripts/download_and_configure.sh
+chmod +x scripts/docker_manager.sh
+./scripts/docker_manager.sh
 ```
-
-```powershell
-
-```
-
-You can also run non-interactively:
-
-```bash
-./scripts/download_and_configure.sh --hf-token <your-token> \
-  --model-id Qwen/Qwen2.5-0.5B-Instruct --dest ./models/qwen2.5-1.5b
-```
-
-Notes:
-- The script uses `huggingface_hub` under the hood. If it's not installed, the helper will
-  attempt to install it automatically.
-
 ## Enviornment file
 This project requires an attached enviornment file to work, which will be provided with the submission for this assignment
 
@@ -125,10 +103,7 @@ Note: On Linux, `host.docker.internal` may not be available by default; if the a
 
 ### Helper script: scripts/docker_manage.sh
 
-I've included a helper script at `scripts/docker_manage.sh` to make common docker-compose operations easier. Make it executable and use it instead of typing long docker-compose commands:
-
 ```bash
-chmod +x scripts/docker_manage.sh
 
 # Stop containers:
 ./scripts/docker_manage.sh stop
@@ -150,6 +125,13 @@ FORCE=1 ./scripts/docker_manage.sh down-images
 
 # Show compose status:
 ./scripts/docker_manage.sh ps
+```
+## Test script
+Included in /Fitness-Buddy/scripts is `test.sh`, which, when ran, will do 40 tests with randomized inputs. 
+
+```bash
+chmod +x scripts/test.sh
+./scripts/test.sh
 ```
 
 The script includes a safety guard for destructive commands (`down-volumes`, `down-images`) — you must set `FORCE=1` to confirm removal of volumes/images.
